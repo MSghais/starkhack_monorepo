@@ -17,27 +17,35 @@ pub struct StoredName {
 #[derive(Drop, starknet::Event)]
 pub struct BuyKeys {
     #[key]
-    pub user: ContractAddress,
-    pub name: felt252,
-    pub supply: u256,
-    price: u256
+    pub caller: ContractAddress,
+    #[key]
+    pub key_user: ContractAddress,
+    pub amount: u256,
+    pub price: u256,
+    pub protocol_fee: u256,
+    pub creator_fee: u256
 }
 
 #[derive(Drop, starknet::Event)]
 pub struct SellKeys {
     #[key]
-    user: ContractAddress,
-    name: felt252,
-    supply: u256,
-    price: u256
+    pub caller: ContractAddress,
+    #[key]
+    pub key_user: ContractAddress,
+    pub amount: u256,
+    pub price: u256,
+    pub protocol_fee: u256,
+    pub creator_fee: u256
 }
 
 #[derive(Drop, starknet::Event)]
 pub struct CreateKeys {
     #[key]
-    user: ContractAddress,
-    supply: u256,
-    price: u256
+    pub caller: ContractAddress,
+    #[key]
+    pub key_user: ContractAddress,
+    pub amount: u256,
+    pub price: u256,
 }
 
 #[derive(Drop, starknet::Event)]

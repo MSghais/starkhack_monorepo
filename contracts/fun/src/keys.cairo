@@ -12,6 +12,7 @@ pub trait IKeysMarketplace<TContractState> {
     fn set_token(ref self: TContractState, token_quote: TokenQuoteBuyKeys);
     fn set_protocol_fee_percent(ref self: TContractState, protocol_fee_percent: u256);
     fn set_creator_fee_percent(ref self: TContractState, creator_fee_percent: u256);
+    fn set_protocol_fee_destination(ref self: TContractState, protocol_fee_destination: ContractAddress);
     fn store_name(
         ref self: TContractState,
         name: felt252, // registration_type: KeysMarketplace::BondingType
@@ -80,6 +81,7 @@ mod KeysMarketplace {
         default_token: TokenQuoteBuyKeys,
         is_custom_key_enable: bool,
         is_custom_token_enable: bool,
+        protocol_fee_destination: ContractAddress,
         #[substorage(v0)]
         accesscontrol: AccessControlComponent::Storage,
         #[substorage(v0)]
@@ -126,6 +128,7 @@ mod KeysMarketplace {
         // self.protocol_fee_percent.write(MAX_FEE);
         self.protocol_fee_percent.write(MID_FEE);
         self.creator_fee_percent.write(MID_FEE);
+        self.protocol_fee_destination.write(admin);
     }
 
   
@@ -148,6 +151,14 @@ mod KeysMarketplace {
             self.accesscontrol.assert_only_role(ADMIN_ROLE);
             self.protocol_fee_percent.write(protocol_fee_percent);
         }
+
+        fn set_protocol_fee_destination(ref self: ContractState, protocol_fee_destination: ContractAddress) {
+            let caller = get_caller_address();
+            self.accesscontrol.assert_only_role(ADMIN_ROLE);
+            self.protocol_fee_destination.write(protocol_fee_destination);
+        }
+
+        
 
         fn set_creator_fee_percent(ref self: ContractState, creator_fee_percent: u256) {
             let caller = get_caller_address();
@@ -215,20 +226,21 @@ mod KeysMarketplace {
 
             // TODO erc20 token transfer
             let token = old_keys.token_quote.clone();
-            let token_address = old_keys.token_address;
+            let key_token_address = old_keys.token_address;
             // let bonding_curve_type = old_keys.bonding_curve_type;
             let total_supply = old_keys.total_supply;
+            let token_quote=old_keys.token_quote.clone();
+            let quote_token_address = token_quote.token_address.clone();
 
-            let erc20 = IERC20Dispatcher { contract_address: token_address };
+            let erc20 = IERC20Dispatcher { contract_address: quote_token_address };
             let amount_transfer = token.initial_key_price;
             let protocol_fee_percent = self.protocol_fee_percent.read();
             let creator_fee_percent = self.creator_fee_percent.read();
 
-            let token_quote=old_keys.token_quote.clone();
             // Update keys with new values
             let mut key = Keys {
                 owner: old_keys.owner,
-                token_address: token_address, // CREATE 404
+                token_address: key_token_address, // CREATE 404
                 created_at: old_keys.created_at,
                 token_quote: token,
                 price: old_keys.price,
@@ -271,12 +283,12 @@ mod KeysMarketplace {
             println!("protocol_fee_percent {}", protocol_fee_percent);
             let amount_protocol_fee:u256 = total_price*protocol_fee_percent/BPS;
             println!("amount_protocol_fee {}", amount_protocol_fee.clone());
-            total_price-=amount_protocol_fee;
+            // total_price-=amount_protocol_fee;
             let amount_creator_fee=total_price*creator_fee_percent/BPS;
             println!("amount_creator_fee {}", amount_creator_fee.clone());
 
-            let creator_amount=total_price-amount_creator_fee;
-            println!("creator_amount {}", creator_amount.clone());
+            let remain_liquidity= total_price-amount_creator_fee-amount_protocol_fee;
+            println!("remain_liquidity {}", remain_liquidity.clone());
 
             let mut old_share = self
                 .shares_by_users
@@ -294,15 +306,27 @@ mod KeysMarketplace {
                     total_paid:total_price,
                 };
             } else {
-                share_user.total_paid=old_share.total_paid+total_price;
-                share_user.amount_owned=old_share.amount_owned+amount;
+                share_user.total_paid+=total_price;
+                share_user.amount_owned+=amount;
             }
             key.price = total_price;
             key.total_supply=amount+total_supply;
             self.shares_by_users.write((get_caller_address(), address_user), share_user.clone());
-            // erc20.transfer_from(get_caller_address(), get_contract_address(), amount_protocol_fee);
-            // erc20.transfer_from(get_caller_address(), key.owner, creator_amount);
-            // self._update_keys(address_user, key);
+
+            // Transfer to Liquidity, Creator and Protocol
+    
+            println!("transfer protocol fee {}", amount_protocol_fee.clone());
+
+            erc20.transfer_from(get_caller_address(),  self.protocol_fee_destination.read(), amount_protocol_fee);
+            println!("transfer creator fee {}", amount_creator_fee.clone());
+
+            erc20.transfer_from(get_caller_address(), key.owner, amount_creator_fee);
+
+            println!("transfer liquidity {}", remain_liquidity.clone());
+            erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
+
+            self.emit(BuyKeys{caller:get_caller_address(), key_user:address_user, amount:amount, price:total_price, protocol_fee:amount_protocol_fee, creator_fee:amount_creator_fee});
+            
         }
 
         fn sell_keys(ref self: ContractState, amount: u256) { 

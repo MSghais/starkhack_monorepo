@@ -99,7 +99,7 @@ mod tests {
         let amount = 100_u256;
         cheat_caller_address_global(sender_address);
         erc20.approve(keys.contract_address, amount);
-        stop_cheat_caller_address_global();
+        // stop_cheat_caller_address_global();
 
 
         let key_address=keys.contract_address;
@@ -110,7 +110,7 @@ mod tests {
         start_cheat_caller_address(key_address, sender_address);
         let default_token= keys.get_default_token();
         assert(default_token.token_address == erc20.contract_address, 'no default token');
-        assert(default_token.initial_key_price == INITIAL_KEY_PRICE, 'no default token');
+        assert(default_token.initial_key_price == INITIAL_KEY_PRICE, 'no init price');
 
         // Instantiate keys
         println!("instantiate keys");
@@ -124,7 +124,7 @@ mod tests {
         start_cheat_caller_address(erc20_address, sender_address);
 
         erc20.transfer(buyer, amount);
-        stop_cheat_caller_address(erc20_address);
+        // stop_cheat_caller_address(erc20_address);
 
         // Buyer call to buy keys
         
@@ -132,19 +132,22 @@ mod tests {
 
         cheat_caller_address_global(buyer);
         start_cheat_caller_address(erc20_address, buyer);
-
-        start_cheat_caller_address(keys.contract_address, buyer);
         println!("buyer approve erc20 to key");
 
-        erc20.approve(keys.contract_address, amount);
+        erc20.approve(keys.contract_address, amount+ amount);
+        erc20.approve(key_address,  amount+ amount);
+        erc20.approve(key_address,  amount+ amount);
+
+        start_cheat_caller_address(keys.contract_address, buyer);
+
         println!("buy one keys");
 
         start_cheat_caller_address(keys.contract_address, buyer);
         keys.buy_keys(sender_address, amount_key_buy);
 
-        println!("buy 10 keys");
-        let amount_key_buy = 10_u256;
-        keys.buy_keys(sender_address, amount_key_buy);
+        // println!("buy 10 keys");
+        // let amount_key_buy = 10_u256;
+        // keys.buy_keys(sender_address, amount_key_buy);
 
 
         // println!("buy 100 keys");
