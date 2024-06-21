@@ -1,3 +1,7 @@
+pub mod keys;
+pub mod keys_types;
+pub mod erc20;
+
 fn main() -> u32 {
     fib(16)
 }
