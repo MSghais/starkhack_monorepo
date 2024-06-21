@@ -1,6 +1,9 @@
 pub mod keys;
 pub mod keys_types;
 pub mod erc20;
+// pub mod tests::{tests_keys};
+// pub mod tests;
+
 
 fn main() -> u32 {
     fib(16)
@@ -18,12 +21,10 @@ fn fib(mut n: u32) -> u32 {
     a
 }
 
-#[cfg(test)]
-mod tests {
-    use super::fib;
 
-    #[test]
-    fn it_works() {
-        assert(fib(16) == 987, 'it works!');
-    }
+/// Module containing tests.
+mod tests {
+    #[cfg(test)]
+    mod test_keys;
+
 }
