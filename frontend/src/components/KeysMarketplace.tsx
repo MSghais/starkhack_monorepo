@@ -47,37 +47,12 @@ const KeysMarketplace: FC = () => {
   const [maxGasTokenAmount, setMaxGasTokenAmount] = useState<bigint>();
   const [errorMessage, setErrorMessage] = useState<string>();
   const toast = useToast()
-  const {handleInstantiateKeys} = useInstantiateKeys()
-
-  // The account.estimateInvokeFee doesn't work...
-  const estimateCalls = useCallback(
-    async (account: AccountInterface, calls: Call[]): Promise<EstimateFeeResponse> => {
-      const contractVersion = await provider.getContractVersion(account.address);
-      const nonce = await provider.getNonceForAddress(account.address);
-      const details = stark.v3Details({ skipValidate: true });
-      const invocation = {
-        ...details,
-        contractAddress: account.address,
-        calldata: transaction.getExecuteCalldata(calls, contractVersion.cairo),
-        signature: [],
-      };
-      return provider.getInvokeEstimateFee({ ...invocation }, { ...details, nonce }, 'pending', true);
-    },
-    [provider],
-  );
-
-  // if (!isConnected) {
-  //   return <WalletBar />;
-  // }
-
-  // if (chain !== undefined && chain.name !== 'Starknet Sepolia Testnet') {
-  //   return <p>Please connect with a sepolia account</p>;
-  // }
+  const { handleInstantiateKeys } = useInstantiateKeys()
 
   const instantiateKeys = async () => {
 
-    toast({title:"Instantiate your keys"})
-    if(account) {
+    toast({ title: "Instantiate your keys" })
+    if (account) {
       await handleInstantiateKeys(account)
 
     }
@@ -87,17 +62,21 @@ const KeysMarketplace: FC = () => {
   return (
     <Box>
       <p>Connected with account: {address}</p>
- 
+
       {tx && (
         <a href={`https://sepolia.voyager.online/tx/${tx}`} target={'_blank'} rel='noreferrer'>
           Success:{tx}
         </a>
       )}
       {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
-     
+
       <div>
         {account && (
           <Button
+            borderRadius={{ base: "5px" }}
+            padding={{ base: "5px" }}
+            margin={{ base: "5px" }}
+            bg="green"
             onClick={instantiateKeys}
           >
             {loading ? 'Loading' : 'Instantiate keys'}

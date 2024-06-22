@@ -32,15 +32,16 @@ pub trait IKeysMarketplace<TContractState> {
         bonding_type: BondingType
     ) -> TokenQuoteBuyKeys;
     fn get_amount_to_paid(
-        self: @TContractState,
-        address_user: ContractAddress,
-        amount: u256,
-        // supply:u256,
-        bonding_type: BondingType,
-        token_quote: TokenQuoteBuyKeys
+        self: @TContractState, address_user: ContractAddress, amount: u256,
+    // supply:u256,
+    // bonding_type: BondingType,
+    // token_quote: TokenQuoteBuyKeys
     ) -> u256;
+    fn get_key_of_user(self: @TContractState, key_user: ContractAddress,) -> Keys;
+    fn get_share_key_of_user(
+        self: @TContractState, owner: ContractAddress, key_user: ContractAddress,
+    ) -> SharesKeys;
 }
-
 
 #[starknet::contract]
 mod KeysMarketplace {
@@ -140,10 +141,12 @@ mod KeysMarketplace {
         self.is_custom_token_enable.write(false);
         self.default_token.write(init_token.clone());
         self.initial_key_price.write(init_token.initial_key_price);
-        // self.protocol_fee_percent.write(MAX_FEE);
-        self.protocol_fee_percent.write(MID_FEE);
-        self.creator_fee_percent.write(MID_FEE);
-        self.protocol_fee_destination.write(admin);
+       
+         self.protocol_fee_destination.write(admin);
+        //    self.protocol_fee_percent.write(MAX_FEE);
+        //  self.creator_fee_percent.write(MAX_FEE_CREATOR);
+           self.protocol_fee_percent.write(MID_FEE);
+         self.creator_fee_percent.write(MIN_FEE_CREATOR);
     }
 
 
@@ -340,18 +343,22 @@ mod KeysMarketplace {
 
             // Transfer to Liquidity, Creator and Protocol
 
+
             println!("transfer protocol fee {}", amount_protocol_fee.clone());
 
-            erc20
-                .transfer_from(
-                    get_caller_address(), self.protocol_fee_destination.read(), amount_protocol_fee
-                );
-            println!("transfer creator fee {}", amount_creator_fee.clone());
 
-            erc20.transfer_from(get_caller_address(), key.owner, amount_creator_fee);
+            // TODO uncomment after allowance check script
+            // erc20
+            //     .transfer_from(
+            //         get_caller_address(), self.protocol_fee_destination.read(), amount_protocol_fee
+            //     );
+            // erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
 
-            println!("transfer liquidity {}", remain_liquidity.clone());
-            erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
+            // erc20.transfer_from(get_caller_address(), key.owner, amount_creator_fee);
+
+            // println!("transfer liquidity {}", remain_liquidity.clone());
+            // erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
+
 
             self
                 .emit(
@@ -471,15 +478,15 @@ mod KeysMarketplace {
 
             // Transfer to Liquidity, Creator and Protocol
 
-            println!("transfer protocol fee {}", amount_protocol_fee.clone());
+            // println!("transfer protocol fee {}", amount_protocol_fee.clone());
 
-            erc20.transfer(self.protocol_fee_destination.read(), amount_protocol_fee);
-            println!("transfer creator fee {}", amount_creator_fee.clone());
+            // erc20.transfer(self.protocol_fee_destination.read(), amount_protocol_fee);
+            // println!("transfer creator fee {}", amount_creator_fee.clone());
 
-            erc20.transfer(key.owner, amount_creator_fee);
+            // erc20.transfer(key.owner, amount_creator_fee);
 
-            println!("transfer liquidity {}", remain_liquidity.clone());
-            erc20.transfer(get_caller_address(), remain_liquidity);
+            // println!("transfer liquidity {}", remain_liquidity.clone());
+            // erc20.transfer(get_caller_address(), remain_liquidity);
 
             self
                 .emit(
@@ -509,12 +516,10 @@ mod KeysMarketplace {
         }
 
         fn get_amount_to_paid(
-            self: @ContractState,
-            address_user: ContractAddress,
-            amount: u256,
-            // supply:u256, 
-            bonding_type: BondingType,
-            token_quote: TokenQuoteBuyKeys
+            self: @ContractState, address_user: ContractAddress, amount: u256,
+        // supply:u256, 
+        // bonding_type: BondingType,
+        // token_quote: TokenQuoteBuyKeys
         ) -> u256 {
             let key = self.keys_of_users.read(address_user);
             let mut total_supply = key.total_supply;
@@ -523,6 +528,7 @@ mod KeysMarketplace {
             let current_price = key.price.clone();
             let mut price = current_price;
             let mut total_price = price;
+            let token_quote = key.token_quote.clone();
             let initial_key_price = token_quote.initial_key_price;
             let result = loop {
                 println!("token_quote.initial_key_price {}", token_quote.initial_key_price);
@@ -543,6 +549,16 @@ mod KeysMarketplace {
             };
 
             total_price
+        }
+
+        fn get_key_of_user(self: @ContractState, key_user: ContractAddress,) -> Keys {
+            self.keys_of_users.read(key_user)
+        }
+
+        fn get_share_key_of_user(
+            self: @ContractState, owner: ContractAddress, key_user: ContractAddress,
+        ) -> SharesKeys {
+            self.shares_by_users.read((owner, key_user))
         }
     }
 

@@ -1,7 +1,7 @@
 
 export const CONTRACT_ADDRESS = {
     DEVNET: {
-      KEY: "0x21bc6089305d4f8c6043ccab86e8ccff495c4445d94d212318b9a0dabe8ee0b"
+      KEY: "0xa5bc0bfe73c248477d7e7fa0ad928dc57ff809fa83a78bd98e0e7ea46ba49b"
   
     },
     KEY_MARKETPLACE: ""

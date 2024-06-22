@@ -88,7 +88,7 @@ pub struct SharesKeys {
     pub total_paid: u256,
 }
 
-#[derive(// Drop, 
+#[derive( // Drop, 
 // Serde, Clone, 
 // starknet::Store
 Serde, Copy, Drop, starknet::Store, PartialEq)]
@@ -98,21 +98,23 @@ pub enum BondingType {
     Degens: u64,
 }
 
-pub trait KeysBonding {// fn compute_current_price(self: Keys, initial_key_price: u256) -> u256;
+pub trait KeysBonding {
+    fn compute_current_price(self: Keys, initial_key_price: u256) -> u256;
 // fn compute_current_price_by_amount(self: Keys, initial_key_price: u256, amount: u256) -> u256;
 // fn calculate_new_price(self: Keys, amount_to_buy: u256) -> u256;
 // fn get_price(self: Keys, supply: u256, amount_to_buy: u256) -> u256;
 // fn get_current_price(self: Keys, supply: u256, amount_to_buy: u256) -> u256;
 }
 
-pub impl KeysBondingImpl of KeysBonding {// fn compute_current_price(self: Keys, initial_key_price: u256) -> u256 {
-//     match self.bonding_curve_type {
-//         BondingType::SimpleIncrease => { self.price },
-//         BondingType::Basic => { 0 },
-//         BondingType::Degens => { 0 },
-//     }
-// }
-
+pub impl KeysBondingImpl of KeysBonding {
+    fn compute_current_price(self: Keys, initial_key_price: u256) -> u256 {
+        0
+    // match self.bonding_curve_type {
+    //     BondingType::SimpleIncrease => { self.price },
+    //     BondingType::Basic => { 0 },
+    //     BondingType::Degens => { 0 },
+    // }
+    }
 // fn compute_current_price_by_amount(self: Keys, initial_key_price: u256, amount: u256) -> u256 {
 //     match self.bonding_curve_type {
 //         BondingType::SimpleIncrease => { 0 },
