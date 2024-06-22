@@ -1,9 +1,8 @@
+pub mod erc20;
 pub mod keys;
 pub mod keys_types;
-pub mod erc20;
 // pub mod tests::{tests_keys};
 // pub mod tests;
-
 
 fn main() -> u32 {
     fib(16)
@@ -26,5 +25,4 @@ fn fib(mut n: u32) -> u32 {
 mod tests {
     #[cfg(test)]
     mod test_keys;
-
 }
