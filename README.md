@@ -17,6 +17,8 @@ TODO:
 -[] Liquidity mechanism
 -[] Mint NFT for a Nostr Event
 -[] Keys for a Nostr Event NFT
+-[] Unruggable & Ekubo integrations after reach liquidity supply.
+-[] Launchpad & Pump pool fair launch
 
 
 ## Appchain Nostr & Btc

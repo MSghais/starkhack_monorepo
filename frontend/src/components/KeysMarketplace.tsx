@@ -70,13 +70,32 @@ const KeysMarketplace: FC = () => {
       )}
       {errorMessage && <p style={{ color: 'red' }}>{errorMessage}</p>}
 
+
+
+      <Button onClick={() => {
+        getKeys()
+      }}>Refresh</Button>
+      <div>
+        {account && (
+          <Button
+            borderRadius={{ base: "5px" }}
+            padding={{ base: "5px" }}
+            margin={{ base: "5px" }}
+            bg="green.700"
+            onClick={instantiateKeys}
+          >
+            {loading ? 'Loading' : 'Instantiate keys'}
+          </Button>
+        )}
+      </div>
+
       {keys.length > 0 && keys.map((k, i) => {
         let key_owner = feltToAddress(BigInt(k.owner))
 
         // Check null value 
         if (
           // cairo.uint256(k.total_supply) == cairo.uint256(0)|| 
-        key_owner.length < 64
+          key_owner.length < 64
         ) {
           return <>
           </>
@@ -92,22 +111,6 @@ const KeysMarketplace: FC = () => {
       })}
 
 
-      <Button onClick={() => {
-        getKeys()
-      }}>Refresh</Button>
-      <div>
-        {account && (
-          <Button
-            borderRadius={{ base: "5px" }}
-            padding={{ base: "5px" }}
-            margin={{ base: "5px" }}
-            bg="green"
-            onClick={instantiateKeys}
-          >
-            {loading ? 'Loading' : 'Instantiate keys'}
-          </Button>
-        )}
-      </div>
     </Box>
   );
 };

@@ -67,9 +67,9 @@ export const createKeysMarketplace = async (token_address: string, initial_key_p
           //   maxFee:estimate.suggestedMaxFee
           // }
         },
-          // {
-          //   maxFee: estimate.suggestedMaxFee * BigInt(3)
-          // }
+          {
+            maxFee: estimate.suggestedMaxFee * BigInt(3)
+          }
         );
 
         console.log("Declare deploy", declareResponse?.transaction_hash);

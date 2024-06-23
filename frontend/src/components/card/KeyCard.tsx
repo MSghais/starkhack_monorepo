@@ -1,30 +1,15 @@
 import { FC, useCallback, useEffect, useState } from 'react';
-import {
-  GaslessOptions,
-  SEPOLIA_BASE_URL,
-} from '@avnu/gasless-sdk';
-import { useAccount, useNetwork, useProvider } from '@starknet-react/core';
+
 import { Account, AccountInterface, Call, CallData, EstimateFeeResponse, cairo, stark, transaction, uint256 } from 'starknet';
 import { Box, Button, useToast, Text, Divider, Card, Input } from '@chakra-ui/react';
-import { useInstantiateKeys } from '@/hooks/contracts/useInstantiateKeys';
-import { useDataKeys } from '@/hooks/contracts/useDataKeys';
 import { KeysUser } from '@/types';
-import { Fraction } from '@uniswap/sdk-core';
 import { feltToAddress } from '@/helpers/format';
 import { useBuyKeys } from '@/hooks/contracts/useBuyKeys';
 import { useSellKeys } from '@/hooks/contracts/useSellKeys';
+import { useAccount } from '@starknet-react/core';
 
 
-
-interface IKeyCard {
-  key: KeysUser
-}
-// const KeyCard = (props:IKeyCard) => {
 const KeyCard = (key: KeysUser) => {
-  // const KeyCard = ({key}:IKeyCard) => {
-  // const {key} = props
-  // console.log("KeyCard props",props)
-
   const account = useAccount()
   const { handleBuyKeys } = useBuyKeys()
   const { handleSellKeys } = useSellKeys()
@@ -58,7 +43,7 @@ const KeyCard = (key: KeysUser) => {
   }
 
   const sellKeys = () => {
-    console.log("Buy keys")
+    console.log("SEll keys")
     if (!account) {
       return toast({
         title: "Connect you"
@@ -71,7 +56,7 @@ const KeyCard = (key: KeysUser) => {
     }
     if (!amount) {
       return toast({
-        title: "Enter amount to buy"
+        title: "Enter amount to sell"
       })
     }
     handleSellKeys(account.account,
@@ -85,12 +70,8 @@ const KeyCard = (key: KeysUser) => {
 
   return (
 
-
     <Card
-
       textAlign={"left"}
-      // borderRadius={{ base: "1em" }}
-      // borderRadius={"5em"}
       maxW={{ base: "100%" }}
       minH={{ base: "150px" }}
       py={{ base: "0.5em" }}
@@ -98,7 +79,6 @@ const KeyCard = (key: KeysUser) => {
       w={{ base: "100%", md: "330px", lg: "450px" }}
       maxWidth={{ lg: "750px" }}
       rounded={"1em"}
-      // mx={[5, 5]}
       overflow={"hidden"}
       justifyContent={"space-between"}
       border={"1px"}
@@ -120,9 +100,7 @@ const KeyCard = (key: KeysUser) => {
         <Text fontFamily={"monospace"} textAlign={"center"}>Token quote</Text>
         <Text>Asset: {feltToAddress(BigInt(key.token_quote.token_address))}</Text>
         <Text>Step increase linear: {Number(key.token_quote.step_increase_linear) / 10 ** 18}</Text>
-
       </Box>
-
 
       <Box>
 

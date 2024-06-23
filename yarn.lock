@@ -1225,7 +1225,7 @@
   "resolved" "https://registry.npmjs.org/starknet-types/-/starknet-types-0.7.2.tgz"
   "version" "0.7.2"
 
-"starknet@next":
+"starknet@^6.10.0":
   "integrity" "sha512-Zlo39V37dytBcqHlWpyLkEH4lXGRMaH7ST4yDGSGxkgxlJ11xW7P7abpWnB87Qn9SdgEzUEDLyM3TeBVTsdtYA=="
   "resolved" "https://registry.npmjs.org/starknet/-/starknet-6.10.0.tgz"
   "version" "6.10.0"
