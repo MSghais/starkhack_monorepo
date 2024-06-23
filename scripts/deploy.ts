@@ -12,7 +12,7 @@ dotenv.config();
 export const deployKeys = async () => {
     console.log("deploy keys")
 
-    let keys_address: string | undefined = CONTRACT_ADDRESS.KEY_MARKETPLACE // change default address
+    let keys_address: string | undefined = CONTRACT_ADDRESS.DEVNET.KEY // change default address
 
     const privateKey0 = process.env.DEV_PK as string;
     const accountAddress0 = process.env.DEV_PUBLIC_KEY as string;
@@ -22,10 +22,13 @@ export const deployKeys = async () => {
     // let token = await createToken()
     let token = await transferToken(account, "0x0545d0b3af7412C4e93de7B34461D63601e6dFd1fFc63621A6B8C4b677e36b77", TOKENS_ADDRESS.DEVNET.ETH)
     if (process.env.IS_DEPLOY_CONTRACT == "true") {
+      console.log('try deploy key marketplace')
+
         let keysContract = await createKeysMarketplace(
             TOKENS_ADDRESS.SEPOLIA.BIG_TOKEN,
             // 0.01
-            1
+            1,
+            0.01
             
 
         );

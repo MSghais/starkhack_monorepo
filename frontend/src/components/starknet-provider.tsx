@@ -1,7 +1,7 @@
 "use client";
 import { ReactNode } from "react";
 
-import { mainnet } from "@starknet-react/chains";
+import { devnet, mainnet } from "@starknet-react/chains";
 import {
   StarknetConfig,
   argent,
@@ -19,11 +19,12 @@ export function StarknetProvider({ children }: { children: ReactNode }) {
     includeRecommended: "onlyIfNoConnectors",
     // Randomize the order of the connectors.
     order: "random",
+    
   });
 
   return (
     <StarknetConfig
-      chains={[mainnet]}
+      chains={[devnet]}
       provider={publicProvider()}
       connectors={connectors}
       explorer={voyager}

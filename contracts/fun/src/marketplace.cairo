@@ -157,7 +157,6 @@ mod KeysMarketplace {
         self.protocol_fee_percent.write(MAX_FEE);
         self.creator_fee_percent.write(MAX_FEE_CREATOR);
         self.step_increase_linear.write(step_increase_linear);
-        self.total_keys.write(0);
     //    self.protocol_fee_percent.write(MID_FEE);
     //  self.creator_fee_percent.write(MIN_FEE_CREATOR);
     }
@@ -254,13 +253,8 @@ mod KeysMarketplace {
             self.keys_of_users.write(get_caller_address(), key.clone());
 
             let total_key = self.total_keys.read();
-            if total_key == 0 {
-                 self.total_keys.write(1);
-            self.array_keys_of_users.write(0, key);
-            } else {
-                self.total_keys.write(total_key + 1);
-                self.array_keys_of_users.write(total_key , key);
-            }
+            self.total_keys.write(total_key + 1);
+            self.array_keys_of_users.write(total_key + 1, key);
 
             self
                 .emit(
@@ -582,10 +576,7 @@ mod KeysMarketplace {
                     break total_price;
                 }
                 // OLD calculation
-                // let price_for_this_key = initial_key_price * (actual_supply * step_increase_linear);
-                // get_amount_to_paid
-                let price_for_this_key = KeysBonding::get_price(key.clone(), actual_supply);
-
+                let price_for_this_key = initial_key_price * (actual_supply * step_increase_linear);
                 println!("i {} price_for_this_key {}", actual_supply, price_for_this_key);
                 price += price_for_this_key;
                 total_price += price_for_this_key;
@@ -608,19 +599,18 @@ mod KeysMarketplace {
         }
 
         fn get_all_keys(self: @ContractState) -> Span<Keys> {
-            let max_key_id = self.total_keys.read()+1;
+            let max_key_id = self.total_keys.read();
             let mut keys: Array<Keys> = ArrayTrait::new();
-            let mut i = 0; //Since the stream id starts from 0
+            let mut i = 1; //Since the stream id starts from 1
             loop {
                 if i >= max_key_id {
-                }
-                let key = self.array_keys_of_users.read(i);
-                if key.owner.is_zero() {
                     break keys.span();
                 }
+                let key = self.array_keys_of_users.read(i);
                 keys.append(key);
                 i += 1;
             }
+        // keys.span()
         }
     // fn get_all_shares_keys(
     //     self: @ContractState

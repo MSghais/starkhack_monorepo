@@ -34,14 +34,16 @@ describe("Keys marketplace End to end test", () => {
     // }
     if (process.env.IS_DEPLOY_CONTRACT == "true") {
 
+      console.log('try deploy key marketplace')
 
       let keysContract = await createKeysMarketplace(
         // tokenContract?.address,
         token_used_address,
 
         // TOKENS_ADDRESS.SEPOLIA.BIG_TOKEN,
-        // 0.01
-        1
+        1,
+        // 1,
+        0.01
       );
 
       console.log("keysContract address", keysContract?.contract_address)
@@ -88,28 +90,28 @@ describe("Keys marketplace End to end test", () => {
     // await account?.waitForTransaction(txApprove?.transaction_hash)
     // Need an approve before
 
+    console.log("instantiate keys");
 
 
+    await instantiateKeys(
+      account,
+      key_contract
+      // key_contract,
+
+      // strkToken?.address,
+    )
+
+    console.log("try approve key erc20");
 
     let amountToPaid= await key_contract.get_amount_to_paid(account?.address, amount,);
 
     console.log("amountToPaid",amountToPaid);
-    console.log("try approve key erc20");
 
     let txApprove = await strkToken.approve(
       key_contract?.address,
       cairo.uint256(amountToPaid), // change for decimals float => uint256.bnToUint256("0x"+alicePublicKey)
     )
-    console.log("instantiate keys");
-
-
-    // await instantiateKeys(
-    //   account,
-    //   key_contract
-    //   // key_contract,
-
-    //   // strkToken?.address,
-    // )
+ 
     console.log("buy keys");
 
     await buyKeys(
@@ -124,6 +126,11 @@ describe("Keys marketplace End to end test", () => {
       // strkToken?.address,
     )
     console.log("buy keys");
+
+
+    amountToPaid= await key_contract.get_amount_to_paid(account?.address, amount,);
+
+    console.log("amountToPaid",amountToPaid);
 
     await sellKeys(
       {

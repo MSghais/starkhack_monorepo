@@ -7,35 +7,7 @@ import {
 import { mode } from "@chakra-ui/theme-tools";
 // 2. Extend the theme to include custom colors, fonts, etc
 const colors = {
-  brand: {
-    primary: "#DDBD22",
-    secondary: "#4f89a8",
-    complement: "#2242DD",
-    // callToAction:"#22DDBD"
-    callToAction:"#22DDBD"
-  },
-
-  blue: {
-    primary: "#0d0889",
-    secondary: "#084389",
-    flash: "##120bb9",
-  },
-  button: {
-    primary: "rgba(168, 103, 43, 0.65)",
-  },
-
-  gray: {
-    // 800: '#153e75',
-    700: "#252627",
-    basic: "#3c3c3c",
-    one: "#F5F5F5",
-    two: "#EEEEEE",
-  },
-  body: {
-    body: {
-      bg: "#153e75",
-    },
-  },
+ 
 };
 
 // 2. Add your color mode config

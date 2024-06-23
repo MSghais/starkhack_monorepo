@@ -1,19 +1,16 @@
 import {
   Account,
   json,
-  hash,
   CallData,
   Contract,
   cairo,
   uint256,
-  byteArray,
   Uint256,
 } from "starknet";
 import fs from "fs";
 import dotenv from "dotenv";
 import { provider } from "./starknet";
 import path from "path";
-import { CONTRACT_ADDRESS } from "../scripts/constants";
 
 dotenv.config();
 
@@ -27,7 +24,7 @@ const PATH_KEY_MARKETPLACE_COMPILED = path.resolve(
 );
 
 /** @TODO spec need to be discuss. This function serve as an example */
-export const createKeysMarketplace = async (token_address: string, initial_key_price: number,) => {
+export const createKeysMarketplace = async (token_address: string, initial_key_price: number, step_linear_increase: number) => {
   try {
     // initialize existing predeployed account 0 of Devnet
     const privateKey0 = process.env.DEV_PK as string;
@@ -43,85 +40,66 @@ export const createKeysMarketplace = async (token_address: string, initial_key_p
     const compiledSierraAAaccount = json.parse(
       fs.readFileSync(PATH_KEY_MARKETPLACE).toString("ascii")
     );
-    // const compiledCasm = json.parse(
-    //   fs.readFileSync(PATH_KEY_MARKETPLACE).toString("ascii")
-    // );
-    // const compiledSierraAAaccount = json.parse(
-    //   fs.readFileSync(PATH_KEY_MARKETPLACE_COMPILED).toString("ascii")
-    // );
-    /** Get class hash account */
-
-    // const ch = hash.computeSierraContractClassHash(compiledSierraAAaccount);
-    // const compCH = hash.computeCompiledClassHash(compiledAACasm);
-    // let pubkeyUint = pubkeyToUint256(nostrPublicKey);
-
-    //Devnet
-    // //  fund account address before account creation
-    // const { data: answer } = await axios.post(
-    //   "http://127.0.0.1:5050/mint",
-    //   {
-    //     address: AAcontractAddress,
-    //     amount: 50_000_000_000_000_000_000,
-    //     lite: true,
-    //   },
-    //   { headers: { "Content-Type": "application/json" } }
-    // );
-    // console.log("Answer mint =", answer);
-
-    // deploy account
 
     // const AAaccount = new Account(provider, AAcontractAddress, AAprivateKey);
     /** @description uncomment this to declare your account */
     // console.log("declare account");
 
     if (process.env.REDECLARE_CONTRACT == "true") {
-      console.log("try declare account");
-      // const declareResponse = await account0.declare({
-      //   contract: compiledSierraAAaccount,
-      //   casm: compiledCasm,
-      // });
+      try {
+        console.log("try declare account");
+        // const declareResponse = await account0.declare({
+        //   contract: compiledSierraAAaccount,
+        //   casm: compiledCasm,
+        // });
 
-      const estimate = await account0.estimateDeclareFee({
-        contract: compiledSierraAAaccount,
-        casm: compiledCasm,
-      })
-      console.log("Declare estimate", estimate);
+        const estimate = await account0.estimateDeclareFee({
+          contract: compiledSierraAAaccount,
+          casm: compiledCasm,
+        })
+        console.log("Declare estimate", estimate);
 
-      const declareResponse = await account0.declareIfNot({
-        contract: compiledSierraAAaccount,
-        casm: compiledCasm,
+        const declareResponse = await account0.declare({
+          contract: compiledSierraAAaccount,
+          casm: compiledCasm,
 
-        // {
-        //   maxFee:estimate.suggestedMaxFee
-        // }
-      },
-        {
-          maxFee: estimate.suggestedMaxFee * BigInt(3)
-        });
+          // {
+          //   maxFee:estimate.suggestedMaxFee
+          // }
+        },
+          // {
+          //   maxFee: estimate.suggestedMaxFee * BigInt(3)
+          // }
+        );
 
-      console.log("Declare deploy", declareResponse?.transaction_hash);
-      await provider.waitForTransaction(declareResponse?.transaction_hash);
-      const contractClassHash = declareResponse.class_hash;
-      console.log("contractClassHash", contractClassHash);
-      KeysClassHash = contractClassHash;
+        console.log("Declare deploy", declareResponse?.transaction_hash);
+        await provider.waitForTransaction(declareResponse?.transaction_hash);
+        const contractClassHash = declareResponse.class_hash;
+        console.log("contractClassHash", contractClassHash);
+        KeysClassHash = contractClassHash;
 
-      const nonce = await account0?.getNonce();
-      console.log("nonce", nonce);
+        const nonce = await account0?.getNonce();
+        console.log("nonce", nonce);
 
-      console.log("KeysClassHash", KeysClassHash);
+        console.log("KeysClassHash", KeysClassHash);
 
-      // const deployResponse = await account0.declareAndDeploy({
-      //   contract: compiledSierraAAaccount,
-      //   casm: compiledSierraAAaccount,
-      //   constructorCalldata: [account0?.address,
-      //     token_address,
-      //   // uint256.bnToUint256(BigInt("0x"+initial_key_price))
-      //   uint256.bnToUint256(BigInt(initial_key_price))
-      //   ],
-  
-      // });
+        // const deployResponse = await account0.declareAndDeploy({
+        //   contract: compiledSierraAAaccount,
+        //   casm: compiledSierraAAaccount,
+        //   constructorCalldata: [account0?.address,
+        //     token_address,
+        //   // uint256.bnToUint256(BigInt("0x"+initial_key_price))
+        //   uint256.bnToUint256(BigInt(initial_key_price))
+        //   ],
+
+        // });
+      } catch (e) {
+        console.log("Error declare key marketplace", e)
+
+      }
+
     }
- 
+
 
     // const { classHash, contract_address, transaction_hash } = deployResponse.deploy;
     let total_amount_float = initial_key_price ?? 0.01;
@@ -136,14 +114,26 @@ export const createKeysMarketplace = async (token_address: string, initial_key_p
       total_amount = uint256.bnToUint256(BigInt(total_amount_nb));
     }
 
+
+    let step__float = step_linear_increase ?? 0.01;
+
+    let total_step_linear_increase: Uint256 | undefined;
+    const total_step_linear_increase_nb = step__float * 10 ** Number(decimals);
+
+    if (Number.isInteger(total_step_linear_increase_nb)) {
+      total_step_linear_increase = cairo.uint256(total_step_linear_increase_nb);
+    } else if (!Number.isInteger(total_step_linear_increase_nb)) {
+      total_step_linear_increase = uint256.bnToUint256(BigInt(total_step_linear_increase_nb));
+    }
+
     const { transaction_hash, contract_address } =
       await account0.deployContract({
         classHash: KeysClassHash,
         constructorCalldata: [
           account0?.address,
           total_amount ?? cairo.uint256(1),
-
           token_address as `0x${string}`,
+          total_step_linear_increase ?? cairo.uint256(1)
           // uint256.bnToUint256(BigInt("0x"+initial_key_price))
           // cairo.uint256(1)
           // uint256.bnToUint256(BigInt(initial_key_price))
