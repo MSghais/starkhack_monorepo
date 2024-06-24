@@ -1,8 +1,13 @@
+use core::num::traits::Zero;
 use joy_fun::keys_types::{
+    //    TokenQuoteBuyKeys, Keys, SharesKeys, BondingType, 
     KeysBonding, KeysBondingImpl, MINTER_ROLE, ADMIN_ROLE, StoredName, BuyKeys, SellKeys,
     CreateKeys, KeysUpdated, TokenQuoteBuyKeys, Keys, SharesKeys, BondingType, get_linear_price,
 };
+// use array::ArrayTrait;
+
 use starknet::ContractAddress;
+
 
 #[starknet::interface]
 pub trait IKeysMarketplace<TContractState> {
@@ -12,14 +17,28 @@ pub trait IKeysMarketplace<TContractState> {
     fn set_protocol_fee_destination(
         ref self: TContractState, protocol_fee_destination: ContractAddress
     );
+    fn store_name(
+        ref self: TContractState,
+        name: felt252, // bonding_type: KeysMarketplace::BondingType
+        bonding_type: BondingType
+    );
     fn instantiate_keys(
         ref self: TContractState, // token_quote: TokenQuoteBuyKeys, // bonding_type: KeysMarketplace::BondingType,
     );
     fn buy_keys(ref self: TContractState, address_user: ContractAddress, amount: u256);
     fn sell_keys(ref self: TContractState, address_user: ContractAddress, amount: u256);
     fn get_default_token(self: @TContractState,) -> TokenQuoteBuyKeys;
+    fn get_next_price(
+        self: @TContractState,
+        address_user: ContractAddress,
+        amount: u256,
+        bonding_type: BondingType
+    ) -> TokenQuoteBuyKeys;
     fn get_amount_to_paid(
         self: @TContractState, address_user: ContractAddress, amount: u256,
+    // supply:u256,
+    // bonding_type: BondingType,
+    // token_quote: TokenQuoteBuyKeys
     ) -> u256;
     fn get_key_of_user(self: @TContractState, key_user: ContractAddress,) -> Keys;
     fn get_share_key_of_user(
@@ -27,12 +46,6 @@ pub trait IKeysMarketplace<TContractState> {
     ) -> SharesKeys;
 
     fn get_all_keys(self: @TContractState) -> Span<Keys>;
-        // fn get_next_price(
-    //     self: @TContractState,
-    //     address_user: ContractAddress,
-    //     amount: u256,
-    //     bonding_type: BondingType
-    // ) -> TokenQuoteBuyKeys;
 }
 
 #[starknet::contract]
@@ -49,8 +62,7 @@ mod KeysMarketplace {
     };
     use super::{
         StoredName, BuyKeys, SellKeys, CreateKeys, KeysUpdated, TokenQuoteBuyKeys, Keys, SharesKeys,
-        KeysBonding, KeysBondingImpl, MINTER_ROLE, ADMIN_ROLE, BondingType, 
-        // get_linear_price,
+        KeysBonding, KeysBondingImpl, MINTER_ROLE, ADMIN_ROLE, BondingType, get_linear_price,
     };
     const MIN_FEE: u256 = 10; //0.1%
     const MAX_FEE: u256 = 1000; //10%
@@ -65,7 +77,6 @@ mod KeysMarketplace {
 
     component!(path: AccessControlComponent, storage: accesscontrol, event: AccessControlEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
-
     // AccessControl
     #[abi(embed_v0)]
     impl AccessControlImpl =
@@ -83,15 +94,14 @@ mod KeysMarketplace {
         shares_by_users: LegacyMap::<(ContractAddress, ContractAddress), SharesKeys>,
         bonding_type: LegacyMap::<ContractAddress, BondingType>,
         array_keys_of_users: LegacyMap::<u64, Keys>,
-        is_tokens_buy_enable: LegacyMap::<ContractAddress, TokenQuoteBuyKeys>,
-        default_token: TokenQuoteBuyKeys,
-
         total_names: u128,
         initial_key_price: u256,
         protocol_fee_percent: u256,
         creator_fee_percent: u256,
         is_fees_protocol: bool,
         step_increase_linear: u256,
+        is_tokens_buy_enable: LegacyMap::<ContractAddress, TokenQuoteBuyKeys>,
+        default_token: TokenQuoteBuyKeys,
         is_custom_key_enable: bool,
         is_custom_token_enable: bool,
         protocol_fee_destination: ContractAddress,
@@ -192,9 +202,12 @@ mod KeysMarketplace {
             self.creator_fee_percent.write(creator_fee_percent);
         }
 
-    
+        fn store_name(ref self: ContractState, name: felt252, bonding_type: BondingType) {
+            let caller = get_caller_address();
+            self._store_name(caller, name, bonding_type);
+        }
 
-    //     // User
+        // User
 
         // Create keys for an user
         fn instantiate_keys(ref self: ContractState, // token_quote: TokenQuoteBuyKeys,
@@ -282,7 +295,7 @@ mod KeysMarketplace {
             // Update keys with new values
             let mut key = Keys {
                 owner: old_keys.owner,
-                token_address: old_keys.token_address, // CREATE 404
+                token_address: key_token_address, // CREATE 404
                 created_at: old_keys.created_at,
                 token_quote: token,
                 price: old_keys.price,
@@ -294,51 +307,49 @@ mod KeysMarketplace {
             // Refactorize and opti
             let mut actual_supply = total_supply;
             let final_supply = total_supply + amount;
-            let mut price = key.price.clone();
+            let current_price = key.price.clone();
+            let mut price = current_price;
             let mut total_price = price;
-            let initial_key_price = token_quote.initial_key_price.clone();
-            let step_increase_linear = token_quote.step_increase_linear.clone();
-
+            let initial_key_price = token_quote.initial_key_price;
+            let step_increase_linear = token_quote.step_increase_linear;
 
             // Naive loop for price calculation
             // Add calculation curve
 
-            // let result = loop {
-            loop {
-
+            let result = loop {
+                println!("token_quote.initial_key_price {}", token_quote.initial_key_price);
                 // Bonding price calculation based on a type 
-                // let current_price = initial_key_price + (actual_supply * step_increase_linear);
-                // println!("current_price {}", current_price);
+                let current_price = initial_key_price + (actual_supply * step_increase_linear);
+                println!("current_price {}", current_price);
 
-                // println!("token_quote.initial_key_price {}", token_quote.initial_key_price);
+                println!("token_quote.initial_key_price {}", token_quote.initial_key_price);
                 if final_supply == actual_supply {
-                    // break total_price;
-                    break;
+                    break total_price;
                 }
                 // OLD calculation
                 // let price_for_this_key = actual_supply * token_quote.initial_key_price;
                 // let price_for_this_key = initial_key_price* (actual_supply * step_increase_linear);
-                // // let price_for_this_key=get_linear_price(key, actual_supply);
-                // // let price_for_this_key=get_linear_price(key.clone(), actual_supply);
-                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
+                // let price_for_this_key=get_linear_price(key, actual_supply);
+                // let price_for_this_key=get_linear_price(key.clone(), actual_supply);
+                let price_for_this_key = KeysBonding::get_price(key.clone(), actual_supply);
 
-                // println!("i {} price_for_this_key {}", actual_supply, price_for_this_key);
+                println!("i {} price_for_this_key {}", actual_supply, price_for_this_key);
                 price += price_for_this_key;
                 total_price += price_for_this_key;
-                // println!("i {} total_price {}", actual_supply, total_price);
+                println!("i {} total_price {}", actual_supply, total_price);
 
                 actual_supply += 1;
             };
-            // println!("total_price {}", total_price.clone());
-            // println!("protocol_fee_percent {}", protocol_fee_percent);
+            println!("total_price {}", total_price.clone());
+            println!("protocol_fee_percent {}", protocol_fee_percent);
             let amount_protocol_fee: u256 = total_price * protocol_fee_percent / BPS;
-            // println!("amount_protocol_fee {}", amount_protocol_fee.clone());
+            println!("amount_protocol_fee {}", amount_protocol_fee.clone());
             // total_price-=amount_protocol_fee;
             let amount_creator_fee = total_price * creator_fee_percent / BPS;
-            // println!("amount_creator_fee {}", amount_creator_fee.clone());
+            println!("amount_creator_fee {}", amount_creator_fee.clone());
 
             let remain_liquidity = total_price - amount_creator_fee - amount_protocol_fee;
-            // println!("remain_liquidity {}", remain_liquidity.clone());
+            println!("remain_liquidity {}", remain_liquidity.clone());
 
             let mut old_share = self.shares_by_users.read((get_caller_address(), address_user));
 
@@ -366,11 +377,11 @@ mod KeysMarketplace {
 
             self.keys_of_users.write(address_user, key.clone());
 
-            // // Transfer to Liquidity, Creator and Protocol
+            // Transfer to Liquidity, Creator and Protocol
 
-            // println!("transfer protocol fee {}", amount_protocol_fee.clone());
+            println!("transfer protocol fee {}", amount_protocol_fee.clone());
 
-            // // TODO uncomment after allowance check script
+            // TODO uncomment after allowance check script
             erc20
                 .transfer_from(
                     get_caller_address(), self.protocol_fee_destination.read(), amount_protocol_fee
@@ -378,7 +389,7 @@ mod KeysMarketplace {
 
             erc20.transfer_from(get_caller_address(), key.owner, amount_creator_fee);
 
-            // println!("transfer liquidity {}", remain_liquidity.clone());
+            println!("transfer liquidity {}", remain_liquidity.clone());
             erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
 
             self
@@ -424,7 +435,7 @@ mod KeysMarketplace {
             // Update keys with new values
             let mut key = Keys {
                 owner: old_keys.owner,
-                token_address: old_keys.token_address, // CREATE 404
+                token_address: key_token_address, // CREATE 404
                 created_at: old_keys.created_at,
                 token_quote: token,
                 price: old_keys.price,
@@ -434,33 +445,53 @@ mod KeysMarketplace {
             };
             // Todo price by pricetype after fix Enum instantiate
             // Refactorize and opti
-
             let mut actual_supply = total_supply;
-            let final_supply = total_supply + amount;
-            let mut price = key.price.clone();
-
+            let final_supply = total_supply - amount;
+            let current_price = key.price.clone();
+            let mut price = current_price;
             let mut total_price = price;
-            let initial_key_price = token_quote.initial_key_price.clone();
-            let step_increase_linear = token_quote.step_increase_linear.clone();
+            let initial_key_price = token_quote.initial_key_price;
+            let step_increase_linear = token_quote.step_increase_linear;
 
             // Naive loop for price calculation
             // Add calculation curve
-            loop {
-                // Bonding price calculation based on a type 
+            println!("actual_supply {} ", actual_supply);
+            println!("final_supply {} ", final_supply);
+
+            let result = loop {
+                println!("token_quote.initial_key_price {}", token_quote.initial_key_price);
+                let current_price = initial_key_price + (actual_supply * step_increase_linear);
+                println!("current_price {}", current_price);
+
                 if final_supply == actual_supply {
-                    // break total_price;
-                    break;
+                    key.price = current_price;
+
+                    break total_price;
                 }
+                // Bonding price calculation based on a type 
                 // OLD calculation
-                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
+                // let price_for_this_key = initial_key_price* (actual_supply * step_increase_linear);
+                // let price_for_this_key=get_linear_price(key.clone(), actual_supply);
+                let price_for_this_key = KeysBonding::get_price(key.clone(), actual_supply);
+
+                println!("i {} price_for_this_key {}", actual_supply, price_for_this_key);
                 price -= price_for_this_key;
                 total_price -= price_for_this_key;
+                println!("i {} total_price {}", actual_supply, total_price);
+
                 actual_supply -= 1;
             };
 
+            println!("total_price {}", total_price.clone());
+            println!("protocol_fee_percent {}", protocol_fee_percent);
             let amount_protocol_fee: u256 = total_price * protocol_fee_percent / BPS;
+            println!("amount_protocol_fee {}", amount_protocol_fee.clone());
+            // total_price-=amount_protocol_fee;
             let amount_creator_fee = total_price * creator_fee_percent / BPS;
+            println!("amount_creator_fee {}", amount_creator_fee.clone());
+
             let remain_liquidity = total_price - amount_creator_fee - amount_protocol_fee;
+            println!("remain_liquidity {}", remain_liquidity.clone());
 
             if old_share.owner.is_zero() {
                 share_user =
@@ -474,6 +505,9 @@ mod KeysMarketplace {
                         total_paid: total_price,
                     };
             } else {
+                println!("Amount owned {}", share_user.amount_owned);
+                println!("Decrease amount {}", amount);
+
                 share_user.total_paid += total_price;
                 share_user.amount_owned -= amount;
                 share_user.amount_sell += amount;
@@ -484,12 +518,15 @@ mod KeysMarketplace {
             self.keys_of_users.write(address_user, key.clone());
 
             // Transfer to Liquidity, Creator and Protocol
-            // println!("transfer protocol fee {}", amount_protocol_fee.clone());
+
+            println!("transfer protocol fee {}", amount_protocol_fee.clone());
+
             erc20.transfer(self.protocol_fee_destination.read(), amount_protocol_fee);
-            // println!("transfer creator fee {}", amount_creator_fee.clone());
+            println!("transfer creator fee {}", amount_creator_fee.clone());
+
             erc20.transfer(key.owner, amount_creator_fee);
 
-            // println!("transfer liquidity {}", remain_liquidity.clone());
+            println!("transfer liquidity {}", remain_liquidity.clone());
             erc20.transfer(get_caller_address(), remain_liquidity);
 
             self
@@ -509,37 +546,51 @@ mod KeysMarketplace {
             self.default_token.read()
         }
 
-    
-        fn get_amount_to_paid(
-            self: @ContractState, 
-            address_user: ContractAddress, 
+        fn get_next_price(
+            self: @ContractState,
+            address_user: ContractAddress,
             amount: u256,
+            // supply: u256,
+            bonding_type: BondingType
+        ) -> TokenQuoteBuyKeys {
+            self.default_token.read()
+        }
+
+        fn get_amount_to_paid(
+            self: @ContractState, address_user: ContractAddress, amount: u256,
+        // supply:u256, 
+        // bonding_type: BondingType,
+        // token_quote: TokenQuoteBuyKeys
         ) -> u256 {
             let key = self.keys_of_users.read(address_user);
             let mut total_supply = key.total_supply;
             let mut actual_supply = total_supply;
             let final_supply = total_supply - amount;
-            let token_quote=key.token_quote.clone();
-            
-            let mut actual_supply = total_supply;
-            let final_supply = total_supply + amount;
-            let mut price = key.price.clone();
+            let current_price = key.price.clone();
+            let mut price = current_price;
             let mut total_price = price;
-            let initial_key_price = token_quote.initial_key_price.clone();
-            let step_increase_linear = token_quote.step_increase_linear.clone();
-
-            // Naive loop for price calculation
-            // Add calculation curve
-            loop {
+            let token_quote = key.token_quote.clone();
+            let initial_key_price = token_quote.initial_key_price;
+            let step_increase_linear = token_quote.step_increase_linear;
+            let result = loop {
                 // Bonding price calculation based on a type 
+                let current_price = initial_key_price + (actual_supply * step_increase_linear);
+                println!("current_price {}", current_price);
+
+                println!("token_quote.initial_key_price {}", token_quote.initial_key_price);
                 if final_supply == actual_supply {
-                    // break total_price;
-                    break;
+                    break total_price;
                 }
                 // OLD calculation
-                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
-                price -= price_for_this_key;
-                total_price -= price_for_this_key;
+                // let price_for_this_key = initial_key_price * (actual_supply * step_increase_linear);
+                // get_amount_to_paid
+                let price_for_this_key = KeysBonding::get_price(key.clone(), actual_supply);
+
+                println!("i {} price_for_this_key {}", actual_supply, price_for_this_key);
+                price += price_for_this_key;
+                total_price += price_for_this_key;
+                println!("i {} total_price {}", actual_supply, total_price);
+
                 actual_supply -= 1;
             };
 
@@ -571,34 +622,34 @@ mod KeysMarketplace {
                 i += 1;
             }
         }
-    // // fn get_all_shares_keys(
-    // //     self: @ContractState
-    // // ) -> Span<SharesKeys> {
-    // //     self.shares_by_users.read()
-    // // }
+    // fn get_all_shares_keys(
+    //     self: @ContractState
+    // ) -> Span<SharesKeys> {
+    //     self.shares_by_users.read()
     // }
+    }
 
-    // // Could be a group of functions about a same topic
-    // #[generate_trait]
-    // impl InternalFunctions of InternalFunctionsTrait {
-    //     fn _store_name(
-    //         ref self: ContractState, user: ContractAddress, name: felt252, bonding_type: BondingType
-    //     ) { // let total_names = self.total_names.read();
-    //     // self.names.write(user, name);
-    //     // self.bonding_type.write(user, bonding_type);
-    //     // self.total_names.write(total_names + 1);
-    //     // self.emit(StoredName { user: user, name: name });
-    //     }
+    // Could be a group of functions about a same topic
+    #[generate_trait]
+    impl InternalFunctions of InternalFunctionsTrait {
+        fn _store_name(
+            ref self: ContractState, user: ContractAddress, name: felt252, bonding_type: BondingType
+        ) { // let total_names = self.total_names.read();
+        // self.names.write(user, name);
+        // self.bonding_type.write(user, bonding_type);
+        // self.total_names.write(total_names + 1);
+        // self.emit(StoredName { user: user, name: name });
+        }
 
-    //     fn _update_keys(
-    //         ref self: ContractState, user: ContractAddress, keys: Keys,
-    //     // name: felt252,
-    //     // bonding_type: BondingType
-    //     ) { // let total_names = self.total_names.read();
-    //     // self.names.write(user, name);
-    //     // self.bonding_type.write(user, bonding_type);
-    //     // self.total_names.write(total_names + 1);
-    //     // self.emit(StoredName { user: user, name: name });
-    //     }
+        fn _update_keys(
+            ref self: ContractState, user: ContractAddress, keys: Keys,
+        // name: felt252,
+        // bonding_type: BondingType
+        ) { // let total_names = self.total_names.read();
+        // self.names.write(user, name);
+        // self.bonding_type.write(user, bonding_type);
+        // self.total_names.write(total_names + 1);
+        // self.emit(StoredName { user: user, name: name });
+        }
     }
 }

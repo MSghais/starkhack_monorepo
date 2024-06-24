@@ -34,13 +34,19 @@ export const createKeysMarketplace = async (token_address: string, initial_key_p
     const account0 = new Account(provider, accountAddress0, privateKey0, "1");
     let KeysClassHash = process.env.KEY_CLASS_HASH as string;
 
+    // const compiledCasm = json.parse(
+    //   fs.readFileSync(PATH_KEY_MARKETPLACE_COMPILED).toString("ascii")
+    // );
+    // const compiledSierraAAaccount = json.parse(
+    //   fs.readFileSync(PATH_KEY_MARKETPLACE).toString("ascii")
+    // );
+
     const compiledCasm = json.parse(
       fs.readFileSync(PATH_KEY_MARKETPLACE_COMPILED).toString("ascii")
     );
     const compiledSierraAAaccount = json.parse(
       fs.readFileSync(PATH_KEY_MARKETPLACE).toString("ascii")
     );
-
     // const AAaccount = new Account(provider, AAcontractAddress, AAprivateKey);
     /** @description uncomment this to declare your account */
     // console.log("declare account");
@@ -68,7 +74,7 @@ export const createKeysMarketplace = async (token_address: string, initial_key_p
           // }
         },
           {
-            maxFee: estimate.suggestedMaxFee * BigInt(3)
+            // maxFee: estimate.suggestedMaxFee * BigInt(3)
           }
         );
 
@@ -95,6 +101,7 @@ export const createKeysMarketplace = async (token_address: string, initial_key_p
         // });
       } catch (e) {
         console.log("Error declare key marketplace", e)
+        return;
 
       }
 

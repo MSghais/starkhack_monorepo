@@ -8,6 +8,9 @@ export const CONTRACT_ADDRESS = {
 
 
   },
+  SEPOLIA: {
+    KEY:"0x5e89dc74f1a40d7814966b028a9b1853d39006a954b27828a9de7e333ec8119"
+  },
   KEY_MARKETPLACE: ""
 }
 

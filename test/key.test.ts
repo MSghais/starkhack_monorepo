@@ -32,6 +32,8 @@ describe("Keys marketplace End to end test", () => {
     //   tokenContract = tokenContract
 
     // }
+      // let token = await createToken();
+
     if (process.env.IS_DEPLOY_CONTRACT == "true") {
 
       console.log('try deploy key marketplace')
@@ -42,8 +44,8 @@ describe("Keys marketplace End to end test", () => {
 
         // TOKENS_ADDRESS.SEPOLIA.BIG_TOKEN,
         1,
-        // 1,
-        0.01
+        1,
+        // 0.01
       );
 
       console.log("keysContract address", keysContract?.contract_address)
