@@ -255,11 +255,11 @@ mod KeysMarketplace {
 
             let total_key = self.total_keys.read();
             if total_key == 0 {
-                 self.total_keys.write(1);
-            self.array_keys_of_users.write(0, key);
+                self.total_keys.write(1);
+                self.array_keys_of_users.write(0, key);
             } else {
                 self.total_keys.write(total_key + 1);
-                self.array_keys_of_users.write(total_key , key);
+                self.array_keys_of_users.write(total_key, key);
             }
 
             self
@@ -608,12 +608,11 @@ mod KeysMarketplace {
         }
 
         fn get_all_keys(self: @ContractState) -> Span<Keys> {
-            let max_key_id = self.total_keys.read()+1;
+            let max_key_id = self.total_keys.read() + 1;
             let mut keys: Array<Keys> = ArrayTrait::new();
             let mut i = 0; //Since the stream id starts from 0
             loop {
-                if i >= max_key_id {
-                }
+                if i >= max_key_id {}
                 let key = self.array_keys_of_users.read(i);
                 if key.owner.is_zero() {
                     break keys.span();

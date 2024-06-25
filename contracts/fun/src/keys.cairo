@@ -1,4 +1,4 @@
-use joy_fun::keys_types::{
+use joy_fun::types::keys_types::{
     KeysBonding, KeysBondingImpl, MINTER_ROLE, ADMIN_ROLE, StoredName, BuyKeys, SellKeys,
     CreateKeys, KeysUpdated, TokenQuoteBuyKeys, Keys, SharesKeys, BondingType, get_linear_price,
 };
@@ -26,7 +26,7 @@ pub trait IKeysMarketplace<TContractState> {
         self: @TContractState, owner: ContractAddress, key_user: ContractAddress,
     ) -> SharesKeys;
     fn get_all_keys(self: @TContractState) -> Span<Keys>;
-    // fn get_token_quotes(self: @TContractState) -> Span<TokenQuoteBuyKeys>;
+// fn get_token_quotes(self: @TContractState) -> Span<TokenQuoteBuyKeys>;
 
 }
 
@@ -44,7 +44,7 @@ mod KeysMarketplace {
     };
     use super::{
         StoredName, BuyKeys, SellKeys, CreateKeys, KeysUpdated, TokenQuoteBuyKeys, Keys, SharesKeys,
-        KeysBonding, KeysBondingImpl, MINTER_ROLE, ADMIN_ROLE, BondingType, 
+        KeysBonding, KeysBondingImpl, MINTER_ROLE, ADMIN_ROLE, BondingType,
     };
     const MAX_STEPS_LOOP: u256 = 100;
 
@@ -81,7 +81,6 @@ mod KeysMarketplace {
         array_keys_of_users: LegacyMap::<u64, Keys>,
         is_tokens_buy_enable: LegacyMap::<ContractAddress, TokenQuoteBuyKeys>,
         default_token: TokenQuoteBuyKeys,
-
         total_names: u128,
         initial_key_price: u256,
         protocol_fee_percent: u256,
@@ -191,8 +190,7 @@ mod KeysMarketplace {
         // User
 
         // Create keys for an user
-        fn instantiate_keys(ref self: ContractState, 
-        // token_quote: TokenQuoteBuyKeys,
+        fn instantiate_keys(ref self: ContractState, // token_quote: TokenQuoteBuyKeys,
         // bonding_type: BondingType, 
         ) {
             let caller = get_caller_address();
@@ -237,11 +235,11 @@ mod KeysMarketplace {
 
             let total_key = self.total_keys.read();
             if total_key == 0 {
-                 self.total_keys.write(1);
-            self.array_keys_of_users.write(0, key);
+                self.total_keys.write(1);
+                self.array_keys_of_users.write(0, key);
             } else {
                 self.total_keys.write(total_key + 1);
-                self.array_keys_of_users.write(total_key , key);
+                self.array_keys_of_users.write(total_key, key);
             }
 
             self
@@ -264,7 +262,7 @@ mod KeysMarketplace {
             let old_keys = self.keys_of_users.read(address_user);
             assert!(!old_keys.owner.is_zero(), "key not found");
             let initial_key_price = self.initial_key_price.read();
-            assert!(amount<=MAX_STEPS_LOOP, "max step loop");
+            assert!(amount <= MAX_STEPS_LOOP, "max step loop");
 
             // TODO erc20 token transfer
             let token = old_keys.token_quote.clone();
@@ -275,7 +273,6 @@ mod KeysMarketplace {
             let quote_token_address = token_quote.token_address.clone();
 
             let erc20 = IERC20Dispatcher { contract_address: quote_token_address };
-            let amount_transfer = token.initial_key_price;
             let protocol_fee_percent = self.protocol_fee_percent.read();
             let creator_fee_percent = self.creator_fee_percent.read();
 
@@ -303,7 +300,6 @@ mod KeysMarketplace {
             // Add calculation curve
             // let result = loop {
             loop {
-
                 // Bonding price calculation based on a type 
                 if final_supply == actual_supply {
                     // break total_price;
@@ -378,15 +374,14 @@ mod KeysMarketplace {
             let old_keys = self.keys_of_users.read(address_user);
             assert!(!old_keys.owner.is_zero(), "key not found");
             let initial_key_price = self.initial_key_price.read();
-            assert!(amount<=MAX_STEPS_LOOP, "max step loop");
+            assert!(amount <= MAX_STEPS_LOOP, "max step loop");
 
-
-            let caller=get_caller_address();
+            let caller = get_caller_address();
             let mut old_share = self.shares_by_users.read((get_caller_address(), address_user));
 
             let mut share_user = old_share.clone();
             // Verify Amount owned
-            assert!(old_keys.total_supply==1 && old_keys.owner == caller, "cant sell owner key");
+            assert!(old_keys.total_supply == 1 && old_keys.owner == caller, "cant sell owner key");
 
             assert!(old_share.amount_owned >= amount, "share too low");
             assert!(old_keys.total_supply >= amount, "above supply");
@@ -399,11 +394,10 @@ mod KeysMarketplace {
             let quote_token_address = token_quote.token_address.clone();
 
             let erc20 = IERC20Dispatcher { contract_address: quote_token_address };
-            let amount_transfer = token.initial_key_price;
             let protocol_fee_percent = self.protocol_fee_percent.read();
             let creator_fee_percent = self.creator_fee_percent.read();
 
-            assert!(old_keys.total_supply >= amount, "share > supply");
+            assert!(total_supply >= amount, "share > supply");
 
             // Update keys with new values
             let mut key = Keys {
@@ -492,21 +486,17 @@ mod KeysMarketplace {
         fn get_default_token(self: @ContractState) -> TokenQuoteBuyKeys {
             self.default_token.read()
         }
-    
+
         fn get_amount_to_paid(
-            self: @ContractState, 
-            address_user: ContractAddress, 
-            amount: u256,
+            self: @ContractState, address_user: ContractAddress, amount: u256,
         ) -> u256 {
-
-
-            assert!(amount<=MAX_STEPS_LOOP, "max step loop");
+            assert!(amount <= MAX_STEPS_LOOP, "max step loop");
             let key = self.keys_of_users.read(address_user);
             let mut total_supply = key.total_supply;
             let mut actual_supply = total_supply;
             let final_supply = total_supply - amount;
-            let token_quote=key.token_quote.clone();
-            
+            let token_quote = key.token_quote.clone();
+
             let mut actual_supply = total_supply;
             let final_supply = total_supply + amount;
             let mut price = key.price.clone();
@@ -543,12 +533,11 @@ mod KeysMarketplace {
         }
 
         fn get_all_keys(self: @ContractState) -> Span<Keys> {
-            let max_key_id = self.total_keys.read()+1;
+            let max_key_id = self.total_keys.read() + 1;
             let mut keys: Array<Keys> = ArrayTrait::new();
             let mut i = 0; //Since the stream id starts from 0
             loop {
-                if i >= max_key_id {
-                }
+                if i >= max_key_id {}
                 let key = self.array_keys_of_users.read(i);
                 if key.owner.is_zero() {
                     break keys.span();
@@ -557,26 +546,23 @@ mod KeysMarketplace {
                 i += 1;
             }
         }
-
-   
     }
 
     // // Could be a group of functions about a same topic
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
-
-        fn _loop_get_price_for_each_key(price:u256, key:Keys, supply:u256, amount:u256) -> u256 {
-
-            let mut total_supply=key.total_supply.clone();
+        fn _loop_get_price_for_each_key(
+            price: u256, key: Keys, supply: u256, amount: u256
+        ) -> u256 {
+            let mut total_supply = key.total_supply.clone();
             let mut actual_supply = total_supply;
-            let token_quote=key.token_quote.clone();
+            let token_quote = key.token_quote.clone();
             let final_supply = total_supply + amount;
             let mut price = key.price.clone();
             let mut total_price = price;
             let initial_key_price = token_quote.initial_key_price.clone();
             let step_increase_linear = token_quote.step_increase_linear.clone();
             loop {
-
                 // Bonding price calculation based on a type 
                 if final_supply == actual_supply {
                     break;
@@ -589,8 +575,6 @@ mod KeysMarketplace {
             };
 
             total_price
-
         }
-  
     }
 }

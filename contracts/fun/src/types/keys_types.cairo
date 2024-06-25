@@ -10,6 +10,7 @@ use starknet::{
 pub const MINTER_ROLE: felt252 = selector!("MINTER_ROLE");
 pub const ADMIN_ROLE: felt252 = selector!("ADMIN_ROLE");
 pub const BURNER_ROLE: felt252 = selector!("BURNER_ROLE");
+pub const OPERATOR: felt252 = selector!("OPERATOR");
 
 // Storage
 
@@ -47,7 +48,7 @@ pub struct SharesKeys {
 }
 
 #[derive(Serde, Copy, // Clone,
-Drop, starknet::Store,//  PartialEq
+ Drop, starknet::Store, //  PartialEq
 )]
 pub enum BondingType {
     Linear,
@@ -122,8 +123,8 @@ pub fn get_current_price(key: @Keys, supply: u256, amount_to_buy: u256) -> u256 
 }
 
 
-pub fn get_linear_price(// key: @Keys, 
-key: Keys, supply: u256,//  amount_to_buy: u256
+pub fn get_linear_price( // key: @Keys, 
+    key: Keys, supply: u256, //  amount_to_buy: u256
 ) -> u256 {
     let step_increase_linear = key.token_quote.step_increase_linear.clone();
     let initial_key_price = key.token_quote.initial_key_price.clone();
@@ -134,7 +135,6 @@ key: Keys, supply: u256,//  amount_to_buy: u256
 
 pub impl KeysBondingImpl of KeysBonding {
     fn get_price(self: Keys, supply: u256) -> u256 {
-   
         match self.bonding_curve_type {
             Option::Some(x) => {
                 match x {

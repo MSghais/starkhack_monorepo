@@ -1,8 +1,23 @@
 pub mod erc20;
 pub mod keys;
-pub mod keys_types;
-// pub mod tests::{tests_keys};
-// pub mod tests;
+// pub mod keys_types;
+// pub mod defi_types;
+// // pub mod types;
+// pub mod defi_types;
+pub mod types {
+    pub mod defi_types;
+    pub mod keys_types;
+}
+
+pub mod tokens {
+    // mod defi_types;
+    mod jbtc;
+}
+
+pub mod defi {
+    // mod defi_types;
+    mod vault;
+}
 
 fn main() -> u32 {
     fib(16)
