@@ -11,6 +11,7 @@ export const prepareAndConnectContract = async (
 ) => {
     // read abi of Test contract
     console.log("contractAddress",contractAddress)
+    // console.log("provider",await provider.getChainId())
 
     const { abi: testAbi } = await provider.getClassAt(contractAddress);
     if (testAbi === undefined) {
@@ -31,17 +32,20 @@ export const useDataKeys = () => {
 
     const account = useAccount();
     const chain = useNetwork()
-    // const provider = useProvider()
+    const rpcProvider = useProvider()
     const chainId = chain?.chain?.id
     console.log("chainId", chainId)
-    const provider = new RpcProvider({ nodeUrl:  'http://127.0.0.1:5050'  });
 
-
+    // const provider = rpcProvider?.provider ?? new RpcProvider({ nodeUrl:  'http://127.0.0.1:5050'  });
+    // const provider = rpcProvider?.provider ?? new RpcProvider();
+    const provider = new RpcProvider();
+    
     /** Indexer with Key contract event */
-    const getAllKeys = async (account?: AccountInterface) => {
+    const getAllKeys = async (account?: AccountInterface, contractAddress?:string) => {
         console.log("get contract")
-        console.log("CONTRACT_ADDRESS.DEVNET.KEY",CONTRACT_ADDRESS.DEVNET.KEY)
-        const contract = await prepareAndConnectContract(provider, CONTRACT_ADDRESS.DEVNET.KEY, account )
+        let addressContract = contractAddress ?? CONTRACT_ADDRESS.SEPOLIA.KEY
+
+        const contract = await prepareAndConnectContract(provider, addressContract, account )
 
         // if (!account) return;
 
@@ -56,9 +60,10 @@ export const useDataKeys = () => {
     };
 
 
-    const getMySharesOfUser = async (account?: AccountInterface) => {
+    const getMySharesOfUser = async (account?: AccountInterface, contractAddress?:string) => {
         console.log("get contract")
         console.log("CONTRACT_ADDRESS.DEVNET.KEY",CONTRACT_ADDRESS.DEVNET.KEY)
+        let addressContract = contractAddress ?? CONTRACT_ADDRESS.SEPOLIA.KEY
 
         const contract = await prepareAndConnectContract(provider, CONTRACT_ADDRESS.DEVNET.KEY, account )
 

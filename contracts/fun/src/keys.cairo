@@ -61,6 +61,7 @@ mod KeysMarketplace {
     const MAX_FEE_CREATOR: u256 = 5000; //50%
 
     const BPS: u256 = 10_000; // 100% = 10_000 bps
+    const MAX_STEPS_LOOP: u256 = 100;
 
 
     component!(path: AccessControlComponent, storage: accesscontrol, event: AccessControlEvent);
@@ -399,10 +400,13 @@ mod KeysMarketplace {
             assert!(!old_keys.owner.is_zero(), "key not found");
             let initial_key_price = self.initial_key_price.read();
 
+
+            let caller=get_caller_address();
             let mut old_share = self.shares_by_users.read((get_caller_address(), address_user));
 
             let mut share_user = old_share.clone();
             // Verify Amount owned
+            assert!(old_keys.total_supply==1 && old_keys.owner == caller, "cant sell owner key");
 
             assert!(old_share.amount_owned >= amount, "share too low");
             assert!(old_keys.total_supply >= amount, "above supply");
@@ -508,7 +512,6 @@ mod KeysMarketplace {
         fn get_default_token(self: @ContractState) -> TokenQuoteBuyKeys {
             self.default_token.read()
         }
-
     
         fn get_amount_to_paid(
             self: @ContractState, 
@@ -538,9 +541,9 @@ mod KeysMarketplace {
                 }
                 // OLD calculation
                 let price_for_this_key = KeysBonding::get_price(key, actual_supply);
-                price -= price_for_this_key;
-                total_price -= price_for_this_key;
-                actual_supply -= 1;
+                price += price_for_this_key;
+                total_price += price_for_this_key;
+                actual_supply += 1;
             };
 
             total_price
@@ -581,6 +584,47 @@ mod KeysMarketplace {
     // // Could be a group of functions about a same topic
     // #[generate_trait]
     // impl InternalFunctions of InternalFunctionsTrait {
+
+
+        fn _loop_get_price_for_each_key(price:u256, key:Key, supply:u256, amount:u256) -> (u256, ) {
+
+            let mut total_supply=key.total_supply.clone();
+            let mut actual_supply = total_supply;
+            let final_supply = total_supply + amount;
+            let mut price = key.price.clone();
+            let mut total_price = price;
+            let initial_key_price = token_quote.initial_key_price.clone();
+            let step_increase_linear = token_quote.step_increase_linear.clone();
+            loop {
+
+                // Bonding price calculation based on a type 
+                // let current_price = initial_key_price + (actual_supply * step_increase_linear);
+                // println!("current_price {}", current_price);
+
+                // println!("token_quote.initial_key_price {}", token_quote.initial_key_price);
+                if final_supply == actual_supply {
+                    // break total_price;
+                    break;
+                }
+                // OLD calculation
+                // let price_for_this_key = actual_supply * token_quote.initial_key_price;
+                // let price_for_this_key = initial_key_price* (actual_supply * step_increase_linear);
+                // // let price_for_this_key=get_linear_price(key, actual_supply);
+                // // let price_for_this_key=get_linear_price(key.clone(), actual_supply);
+                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
+
+                // println!("i {} price_for_this_key {}", actual_supply, price_for_this_key);
+                price += price_for_this_key;
+                total_price += price_for_this_key;
+                // println!("i {} total_price {}", actual_supply, total_price);
+
+                actual_supply += 1;
+            };
+
+
+            total_price
+
+        }
     //     fn _store_name(
     //         ref self: ContractState, user: ContractAddress, name: felt252, bonding_type: BondingType
     //     ) { // let total_names = self.total_names.read();

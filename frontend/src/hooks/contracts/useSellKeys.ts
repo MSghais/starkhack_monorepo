@@ -1,27 +1,22 @@
 import { CONTRACT_ADDRESS } from "@/constants/address";
-import { useAccount, useNetwork } from "@starknet-react/core";
+import { useAccount, useNetwork, useProvider } from "@starknet-react/core";
 import { Account, AccountInterface, Call, CallData, RpcProvider, cairo } from "starknet";
 import { prepareAndConnectContract } from "./useDataKeys";
 import { TokenQuoteBuyKeys } from "@/types";
 
 export const useSellKeys = () => {
-
     const account = useAccount();
     const chain = useNetwork()
+    const rpcProvider = useProvider()
     const chainId = chain?.chain?.id
-    console.log("chainId", chainId)
-    const provider = new RpcProvider({ nodeUrl: 'http://127.0.0.1:5050' });
-
+    // const provider = rpcProvider?.provider ?? new RpcProvider();
+    const provider = rpcProvider?.provider ?? new RpcProvider();
+    
     const handleSellKeys = async (account: AccountInterface, user_address: string, tokenQuote: TokenQuoteBuyKeys, amount: number, contractAddress?: string) => {
         if (!account) return;
 
-        let addressContract = contractAddress ?? CONTRACT_ADDRESS.DEVNET.KEY
+        let addressContract = contractAddress ?? CONTRACT_ADDRESS.SEPOLIA.KEY
         console.log("addressContract", addressContract)
-        // let asset = await prepareAndConnectContract(
-        //     provider,
-        //     tokenQuote?.token_address?.toString(),
-        //     account
-        // );
 
         let key_contract = await prepareAndConnectContract(
             provider,

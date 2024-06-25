@@ -12,13 +12,7 @@ import { KeysUser } from '@/types';
 import { Fraction } from '@uniswap/sdk-core';
 import { feltToAddress } from '@/helpers/format';
 import KeyCard from './card/KeyCard';
-const initialValue: Call[] = [
-  {
-    entrypoint: 'approve',
-    contractAddress: '0x049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7',
-    calldata: ['0x0498E484Da80A8895c77DcaD5362aE483758050F22a92aF29A385459b0365BFE', '0xf', '0x0'],
-  },
-];
+
 const isValidJSON = (str: string): boolean => {
   try {
     JSON.parse(str);
@@ -32,8 +26,6 @@ const KeysMarketplace: FC = () => {
   const { account, isConnected } = useAccount();
   const [loading, setLoading] = useState(false);
   const [tx, setTx] = useState<string>();
-  const [calls, setCalls] = useState(JSON.stringify(initialValue, null, 2));
-  const [maxGasTokenAmount, setMaxGasTokenAmount] = useState<bigint>();
   const [errorMessage, setErrorMessage] = useState<string>();
   const [keys, setKeys] = useState<any[]>([]);
   const toast = useToast()
@@ -89,26 +81,39 @@ const KeysMarketplace: FC = () => {
         )}
       </div>
 
-      {keys.length > 0 && keys.map((k, i) => {
-        let key_owner = feltToAddress(BigInt(k.owner))
 
-        // Check null value 
-        if (
-          // cairo.uint256(k.total_supply) == cairo.uint256(0)|| 
-          key_owner.length < 64
-        ) {
-          return <>
-          </>
-        }
-        return (
-          <>
-            <KeyCard {...k}></KeyCard>
-          </>
+      <Box 
+      display={"grid"}
+        gap={{ md: "1em" }}
+        gridTemplateColumns={{
+          base: "repeat(1,1fr)"
+          , md: "repeat(3,1fr)"
+        }}
+      >
 
-        )
+        {keys.length > 0 && keys.map((k, i) => {
+          let key_owner = feltToAddress(BigInt(k.owner))
+
+          // Check null value 
+          if (
+            // cairo.uint256(k.total_supply) == cairo.uint256(0)|| 
+            key_owner.length < 64
+          ) {
+            return <>
+            </>
+          }
+          return (
+            <>
+              <KeyCard {...k}></KeyCard>
+            </>
+
+          )
 
 
-      })}
+        })}
+
+      </Box>
+
 
 
     </Box>

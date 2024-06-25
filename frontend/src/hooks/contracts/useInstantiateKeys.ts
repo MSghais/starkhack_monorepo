@@ -10,11 +10,13 @@ export const useInstantiateKeys = () => {
     const chainId = chain?.chain?.id
     console.log("chainId", chainId)
 
-    const handleInstantiateKeys = async (account: AccountInterface) => {
+    const handleInstantiateKeys = async (account: AccountInterface, addressContract?:string) => {
         if (!account) return;
 
+        const contractAddress = addressContract ?? CONTRACT_ADDRESS.SEPOLIA.KEY
+
         let call = {
-            contractAddress: CONTRACT_ADDRESS.DEVNET.KEY,
+            contractAddress: contractAddress,
             entrypoint: 'instantiate_keys',
             calldata: CallData.compile({
             }),
