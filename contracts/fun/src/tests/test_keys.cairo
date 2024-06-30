@@ -144,6 +144,7 @@ mod tests {
         start_cheat_caller_address(erc20_address, buyer);
 
         erc20.approve(keys.contract_address, amount_approve + amount_approve);
+        erc20.approve(keys.contract_address, amount_to_paid + amount_to_paid);
 
         let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy, //    1,
         // BondingType::Basic, default_token.clone()

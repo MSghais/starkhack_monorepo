@@ -576,5 +576,31 @@ mod KeysMarketplace {
 
             total_price
         }
+
+        fn _loop_get_price_price(
+            key: Keys, supply: u256, amount: u256
+        ) -> u256 {
+            let mut total_supply = key.total_supply.clone();
+            let mut actual_supply = total_supply;
+            let token_quote = key.token_quote.clone();
+            let final_supply = total_supply + amount;
+            let mut price = key.price.clone();
+            let mut total_price = price;
+            let initial_key_price = token_quote.initial_key_price.clone();
+            let step_increase_linear = token_quote.step_increase_linear.clone();
+            loop {
+                // Bonding price calculation based on a type 
+                if final_supply == actual_supply {
+                    break;
+                }
+                // OLD calculation
+                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
+                price += price_for_this_key;
+                total_price += price_for_this_key;
+                actual_supply += 1;
+            };
+
+            total_price
+        }
     }
 }
