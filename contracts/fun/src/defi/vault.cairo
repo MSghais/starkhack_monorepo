@@ -67,10 +67,8 @@ mod Vault {
     #[storage]
     struct Storage {
         oracle_address: ContractAddress,
-        is_assets_enabled:LegacyMap::<ContractAddress, bool>,
-        assets_by_felt:LegacyMap::<felt252, ContractAddress>,
-      
-      
+        is_assets_enabled: LegacyMap::<ContractAddress, bool>,
+        assets_by_felt: LegacyMap::<felt252, ContractAddress>,
         names: LegacyMap::<ContractAddress, felt252>,
         keys_of_users: LegacyMap::<ContractAddress, Keys>,
         shares_by_users: LegacyMap::<(ContractAddress, ContractAddress), SharesKeys>,

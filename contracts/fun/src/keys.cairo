@@ -139,12 +139,12 @@ mod KeysMarketplace {
         self.initial_key_price.write(init_token.initial_key_price);
 
         self.protocol_fee_destination.write(admin);
-        self.protocol_fee_percent.write(MAX_FEE);
-        self.creator_fee_percent.write(MAX_FEE_CREATOR);
+        // self.protocol_fee_percent.write(MAX_FEE);
+        // self.creator_fee_percent.write(MAX_FEE_CREATOR);
         self.step_increase_linear.write(step_increase_linear);
         self.total_keys.write(0);
-    //    self.protocol_fee_percent.write(MID_FEE);
-    //  self.creator_fee_percent.write(MIN_FEE_CREATOR);
+       self.protocol_fee_percent.write(MID_FEE);
+     self.creator_fee_percent.write(MIN_FEE_CREATOR);
     }
 
 
@@ -342,9 +342,11 @@ mod KeysMarketplace {
 
             self.keys_of_users.write(address_user, key.clone());
 
+            println!("caller {:?}", get_caller_address());
+
             // // Transfer to Liquidity, Creator and Protocol
 
-            // println!("transfer protocol fee {}", amount_protocol_fee.clone());
+            println!("transfer protocol fee {}", amount_protocol_fee.clone());
 
             // // TODO uncomment after allowance check script
             erc20
@@ -352,10 +354,13 @@ mod KeysMarketplace {
                     get_caller_address(), self.protocol_fee_destination.read(), amount_protocol_fee
                 );
 
-            erc20.transfer_from(get_caller_address(), key.owner, amount_creator_fee);
+            println!("transfer liquidity {}", remain_liquidity.clone());
+            println!("transfer total price {}", total_price.clone());
+            // erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
+            erc20.transfer_from(get_caller_address(), get_contract_address(), total_price);
 
-            // println!("transfer liquidity {}", remain_liquidity.clone());
-            erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
+            println!("amount_creator_fee fee {}", amount_creator_fee.clone());
+            erc20.transfer_from(get_caller_address(), key.owner, amount_creator_fee);
 
             self
                 .emit(
@@ -504,6 +509,8 @@ mod KeysMarketplace {
             let initial_key_price = token_quote.initial_key_price.clone();
             let step_increase_linear = token_quote.step_increase_linear.clone();
 
+            let mut steps = 0;
+
             // Naive loop for price calculation
             // Add calculation curve
             loop {
@@ -512,11 +519,16 @@ mod KeysMarketplace {
                     // break total_price;
                     break;
                 }
+
+                if steps == MAX_STEPS_LOOP {
+                    break;
+                }
                 // OLD calculation
                 let price_for_this_key = KeysBonding::get_price(key, actual_supply);
                 price += price_for_this_key;
                 total_price += price_for_this_key;
                 actual_supply += 1;
+                steps += 1;
             };
 
             total_price
@@ -577,9 +589,7 @@ mod KeysMarketplace {
             total_price
         }
 
-        fn _loop_get_price_price(
-            key: Keys, supply: u256, amount: u256
-        ) -> u256 {
+        fn _loop_get_price_price(key: Keys, supply: u256, amount: u256) -> u256 {
             let mut total_supply = key.total_supply.clone();
             let mut actual_supply = total_supply;
             let token_quote = key.token_quote.clone();

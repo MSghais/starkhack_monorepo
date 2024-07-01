@@ -27,17 +27,16 @@ pub struct Deposit {
 pub struct AssetPool {
     pub owner: ContractAddress,
     pub token_address: ContractAddress,
-    pub mintable_token_address:ContractAddress,
-    pub ratio:u256,
+    pub mintable_token_address: ContractAddress,
+    pub ratio: u256,
     pub price: u256,
-    pub limit_tvl:u256,
+    pub limit_tvl: u256,
     pub initial_key_price: u256,
     pub amount: u256,
     pub total_supply: u256,
     pub created_at: u64,
     pub token_quote: ContractAddress
 }
-
 
 
 #[derive(Serde, Copy, // Clone,

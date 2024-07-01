@@ -1,12 +1,13 @@
 use starknet::ContractAddress;
 
-const KEY :felt252 = 18669995996566340; // felt252 conversion of "BTC/USD", can also write const KEY : felt252 = 'BTC/USD';
+const KEY: felt252 =
+    18669995996566340; // felt252 conversion of "BTC/USD", can also write const KEY : felt252 = 'BTC/USD';
 
 #[starknet::interface]
 trait OraclePragmaABI<TContractState> {
     fn initializer(
-        ref self: TContractState, pragma_contract: ContractAddress, 
-        // summary_stats: ContractAddress
+        ref self: TContractState,
+        pragma_contract: ContractAddress, // summary_stats: ContractAddress
     );
     fn check_eth_threshold(self: @TContractState, threshold: u32) -> bool;
     fn get_asset_price(self: @TContractState, asset_id: felt252) -> u128;
@@ -16,19 +17,18 @@ trait OraclePragmaABI<TContractState> {
 
 #[starknet::contract]
 mod OraclePragma {
-    use super::{ContractAddress, OraclePragmaABI};
+    use alexandria_math::pow;
     use array::{ArrayTrait, SpanTrait};
-    use traits::{Into, TryInto};
-
-    use pragma_lib::types::{DataType, AggregationMode, PragmaPricesResponse};
+    use option::OptionTrait;
     use pragma_lib::abi::{
         IPragmaABIDispatcher, IPragmaABIDispatcherTrait, ISummaryStatsABIDispatcher,
         ISummaryStatsABIDispatcherTrait
     };
 
-    use alexandria_math::pow;
+    use pragma_lib::types::{DataType, AggregationMode, PragmaPricesResponse};
     use starknet::get_block_timestamp;
-    use option::OptionTrait;
+    use super::{ContractAddress, OraclePragmaABI};
+    use traits::{Into, TryInto};
 
     const ETH_USD: felt252 = 'ETH/USD';
     const BTC_USD: felt252 = 'BTC/USD';
@@ -38,26 +38,25 @@ mod OraclePragma {
         pragma_contract: ContractAddress,
         summary_stats: ContractAddress,
         assets_felts: LegacyMap::<ContractAddress, felt252>,
-        tokens_enable:LegacyMap::<ContractAddress, bool>,
-        assets_ids:List<felt252>,
+        tokens_enable: LegacyMap::<ContractAddress, bool>,
+        assets_ids: List<felt252>,
     }
 
     #[abi(embed_v0)]
     impl OraclePragmaABIImpl of OraclePragmaABI<ContractState> {
         fn initializer(
             ref self: ContractState,
-            pragma_contract: ContractAddress,
-            // summary_stats: ContractAddress
+            pragma_contract: ContractAddress, // summary_stats: ContractAddress
         ) {
             if self.pragma_contract.read().into() == 0 {
                 self.pragma_contract.write(pragma_contract);
             }
-            // if self.summary_stats.read().into() == 0 {
-            //     self.summary_stats.write(summary_stats);
-            // }
+        // if self.summary_stats.read().into() == 0 {
+        //     self.summary_stats.write(summary_stats);
+        // }
         }
 
-        
+
         fn set_creator_fee_percent(ref self: ContractState, creator_fee_percent: u256) {
             let caller = get_caller_address();
             self.accesscontrol.assert_only_role(ADMIN_ROLE);
@@ -143,31 +142,27 @@ mod OraclePragma {
 
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
-
-        fn _get_asset_price_median(oracle_address: ContractAddress, asset : DataType) -> u128  { 
-            let oracle_dispatcher = IPragmaABIDispatcher{contract_address : oracle_address};
-            let output : PragmaPricesResponse= oracle_dispatcher.get_data(asset, AggregationMode::Median(()));
+        fn _get_asset_price_median(oracle_address: ContractAddress, asset: DataType) -> u128 {
+            let oracle_dispatcher = IPragmaABIDispatcher { contract_address: oracle_address };
+            let output: PragmaPricesResponse = oracle_dispatcher
+                .get_data(asset, AggregationMode::Median(()));
             return output.price;
         }
-        
-        
-        fn _get_asset_price_average(oracle_address: ContractAddress, asset : DataType, sources : Span<felt252>) -> u128  { 
-            let oracle_dispatcher = IPragmaABIDispatcher{contract_address : oracle_address};
-            let output : PragmaPricesResponse= oracle_dispatcher.get_data_for_sources(asset, AggregationMode::Mean(()), sources);
-        
+
+
+        fn _get_asset_price_average(
+            oracle_address: ContractAddress, asset: DataType, sources: Span<felt252>
+        ) -> u128 {
+            let oracle_dispatcher = IPragmaABIDispatcher { contract_address: oracle_address };
+            let output: PragmaPricesResponse = oracle_dispatcher
+                .get_data_for_sources(asset, AggregationMode::Mean(()), sources);
+
             return output.price;
         }
-        
-        fn _get_price() {
-            // //USAGE
-            // let oracle_address : ContractAddress = contract_address_const::<0x06df335982dddce41008e4c03f2546fa27276567b5274c7d0c1262f3c2b5d167>();
-            // let price = get_asset_price_median(oracle_address, DataType::SpotEntry(KEY));
-        }
 
+        fn _get_price() { // //USAGE
+        // let oracle_address : ContractAddress = contract_address_const::<0x06df335982dddce41008e4c03f2546fa27276567b5274c7d0c1262f3c2b5d167>();
+        // let price = get_asset_price_median(oracle_address, DataType::SpotEntry(KEY));
+        }
     }
-
-
-    
-
-
 }

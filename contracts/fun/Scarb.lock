@@ -59,6 +59,7 @@ version = "0.1.0"
 dependencies = [
  "alexandria_math",
  "openzeppelin",
+ "pragma_lib",
  "snforge_std",
 ]
 
@@ -66,6 +67,11 @@ dependencies = [
 name = "openzeppelin"
 version = "0.14.0"
 source = "git+https://github.com/openzeppelin/cairo-contracts?branch=main#1c3049c3cd121a080cabe3046c8113d9129a5728"
+
+[[package]]
+name = "pragma_lib"
+version = "1.0.0"
+source = "git+https://github.com/astraly-labs/pragma-lib#fe9a46743254182ac331da488ccfc05e0185cdd0"
 
 [[package]]
 name = "snforge_std"
