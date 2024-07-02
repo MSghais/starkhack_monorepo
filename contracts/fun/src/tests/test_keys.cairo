@@ -96,42 +96,6 @@ mod tests {
     }
 
 
-    #[test]
-    fn keys_integration_test() {
-        let (sender_address, erc20, keys) = request_fixture();
-        let recipient_address: ContractAddress = 345.try_into().unwrap();
-        let amount = 100_u256;
-
-        cheat_caller_address_global(sender_address);
-        erc20.approve(keys.contract_address, amount);
-        // start_cheat_caller_address(erc20.contract_address, sender_address);
-
-        let default_token = keys.get_default_token();
-        assert(default_token.token_address == erc20.contract_address, 'no default token');
-        assert(default_token.initial_key_price == INITIAL_KEY_PRICE, 'no init price');
-
-        // Instantiate keys
-        println!("instantiate keys");
-        keys.instantiate_keys();
-        println!("get all_keys");
-
-        let mut all_keys = keys.get_all_keys();
-
-        // Buy keys
-        let amount_key_buy = 1_u256;
-
-        let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy, //    1,
-        // BondingType::Basic, default_token.clone()
-        );
-        println!("amount_to_paid {}", amount_to_paid);
-        erc20.approve(keys.contract_address, amount_to_paid * 100);
-
-        let mut allowance = erc20.allowance(sender_address, keys.contract_address);
-        println!("allowance sender {}", allowance);
-        // start_cheat_caller_address(keys.contract_address, sender_address);
-
-        keys.buy_keys(sender_address, amount_key_buy);
-    }
 
     #[test]
     fn keys_end_to_end() {
@@ -158,10 +122,11 @@ mod tests {
         keys.instantiate_keys();
 
         stop_cheat_caller_address(key_address);
+        start_cheat_caller_address(erc20_address, sender_address);
+
         // Instantite buyer
         let buyer: ContractAddress = 456.try_into().unwrap();
         println!("transfer erc20 to buyer");
-        start_cheat_caller_address(erc20_address, sender_address);
 
         erc20.transfer(buyer, amount);
         // stop_cheat_caller_address(erc20_address);
@@ -173,21 +138,15 @@ mod tests {
         cheat_caller_address_global(buyer);
         start_cheat_caller_address(erc20_address, buyer);
         println!("buyer approve erc20 to key");
-
-        // erc20.approve(keys.contract_address, amount+ amount);
         erc20.approve(keys.contract_address, amount+ amount);
+        stop_cheat_caller_address(erc20_address);
 
-        start_cheat_caller_address(keys.contract_address, buyer);
         println!("buy one keys");
         start_cheat_caller_address(keys.contract_address, buyer);
-
-
         let mut allowance = erc20.allowance(buyer, keys.contract_address);
 
-
         println!("allowance buyer {}", allowance);
-
-        // keys.buy_keys(sender_address, amount_key_buy);
+        keys.buy_keys(sender_address, amount_key_buy);
         // keys.buy_keys(sender_address, amount_key_buy);
 
         // println!("buy 10 keys");
@@ -207,6 +166,44 @@ mod tests {
 
 
     }
+
+
+    // #[test]
+    // fn keys_integration_test() {
+    //     let (sender_address, erc20, keys) = request_fixture();
+    //     let recipient_address: ContractAddress = 345.try_into().unwrap();
+    //     let amount = 100_u256;
+
+    //     cheat_caller_address_global(sender_address);
+    //     erc20.approve(keys.contract_address, amount);
+    //     // start_cheat_caller_address(erc20.contract_address, sender_address);
+
+    //     let default_token = keys.get_default_token();
+    //     assert(default_token.token_address == erc20.contract_address, 'no default token');
+    //     assert(default_token.initial_key_price == INITIAL_KEY_PRICE, 'no init price');
+
+    //     // Instantiate keys
+    //     println!("instantiate keys");
+    //     keys.instantiate_keys();
+    //     println!("get all_keys");
+
+    //     let mut all_keys = keys.get_all_keys();
+
+    //     // Buy keys
+    //     let amount_key_buy = 1_u256;
+
+    //     let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy, //    1,
+    //     // BondingType::Basic, default_token.clone()
+    //     );
+    //     println!("amount_to_paid {}", amount_to_paid);
+    //     erc20.approve(keys.contract_address, amount_to_paid * 100);
+
+    //     let mut allowance = erc20.allowance(sender_address, keys.contract_address);
+    //     println!("allowance sender {}", allowance);
+    //     // start_cheat_caller_address(keys.contract_address, sender_address);
+
+    //     keys.buy_keys(sender_address, amount_key_buy);
+    // }
 // #[test]
 // fn keys_buys_approve() {
 //     let (sender_address, erc20, keys) = request_fixture();

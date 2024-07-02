@@ -289,28 +289,29 @@ mod KeysMarketplace {
             };
             // Todo price by pricetype after fix Enum instantiate
             // Refactorize and opti
-            let mut actual_supply = total_supply;
-            let final_supply = total_supply + amount;
-            let mut price = key.price.clone();
-            let mut total_price = price;
-            let initial_key_price = token_quote.initial_key_price.clone();
-            let step_increase_linear = token_quote.step_increase_linear.clone();
+            let total_price=self.get_amount_to_paid(address_user, amount);
+            // let mut actual_supply = total_supply;
+            // let final_supply = total_supply + amount;
+            // let mut price = key.price.clone();
+            // let mut total_price = price;
+            // let initial_key_price = token_quote.initial_key_price.clone();
+            // let step_increase_linear = token_quote.step_increase_linear.clone();
 
-            // Naive loop for price calculation
-            // Add calculation curve
-            // let result = loop {
-            loop {
-                // Bonding price calculation based on a type 
-                if final_supply == actual_supply {
-                    // break total_price;
-                    break;
-                }
-                // OLD calculation
-                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
-                price += price_for_this_key;
-                total_price += price_for_this_key;
-                actual_supply += 1;
-            };
+            // // Naive loop for price calculation
+            // // Add calculation curve
+            // // let result = loop {
+            // loop {
+            //     // Bonding price calculation based on a type 
+            //     if final_supply == actual_supply {
+            //         // break total_price;
+            //         break;
+            //     }
+            //     // OLD calculation
+            //     let price_for_this_key = KeysBonding::get_price(key, actual_supply);
+            //     price += price_for_this_key;
+            //     total_price += price_for_this_key;
+            //     actual_supply += 1;
+            // };
             let amount_protocol_fee: u256 = total_price * protocol_fee_percent / BPS;
             let amount_creator_fee = total_price * creator_fee_percent / BPS;
 
@@ -342,11 +343,11 @@ mod KeysMarketplace {
 
             self.keys_of_users.write(address_user, key.clone());
 
-            println!("caller {:?}", get_caller_address());
+            // println!("caller {:?}", get_caller_address());
 
             // // Transfer to Liquidity, Creator and Protocol
 
-            println!("transfer protocol fee {}", amount_protocol_fee.clone());
+            // println!("transfer protocol fee {}", amount_protocol_fee.clone());
 
             // // TODO uncomment after allowance check script
             erc20
@@ -354,12 +355,13 @@ mod KeysMarketplace {
                     get_caller_address(), self.protocol_fee_destination.read(), amount_protocol_fee
                 );
 
-            println!("transfer liquidity {}", remain_liquidity.clone());
-            println!("transfer total price {}", total_price.clone());
-            // erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
-            erc20.transfer_from(get_caller_address(), get_contract_address(), total_price);
+            // println!("transfer liquidity {}", remain_liquidity.clone());
+            // println!("transfer total price {}", total_price.clone());
+            erc20.transfer_from(get_caller_address(), get_contract_address(), remain_liquidity);
+            // erc20.transfer_from(get_caller_address(), get_contract_address(), total_price);
+            // erc20.transfer_from(get_caller_address(), key.owner, total_price);
 
-            println!("amount_creator_fee fee {}", amount_creator_fee.clone());
+            // println!("amount_creator_fee fee {}", amount_creator_fee.clone());
             erc20.transfer_from(get_caller_address(), key.owner, amount_creator_fee);
 
             self
@@ -417,29 +419,30 @@ mod KeysMarketplace {
             };
             // Todo price by pricetype after fix Enum instantiate
             // Refactorize and opti
+            let total_price=self.get_amount_to_paid(address_user, amount);
 
-            let mut actual_supply = total_supply;
-            let final_supply = total_supply + amount;
-            let mut price = key.price.clone();
+            // let mut actual_supply = total_supply;
+            // let final_supply = total_supply + amount;
+            // let mut price = key.price.clone();
 
-            let mut total_price = price;
-            let initial_key_price = token_quote.initial_key_price.clone();
-            let step_increase_linear = token_quote.step_increase_linear.clone();
+            // let mut total_price = price;
+            // let initial_key_price = token_quote.initial_key_price.clone();
+            // let step_increase_linear = token_quote.step_increase_linear.clone();
 
-            // Naive loop for price calculation
-            // Add calculation curve
-            loop {
-                // Bonding price calculation based on a type 
-                if final_supply == actual_supply {
-                    // break total_price;
-                    break;
-                }
-                // OLD calculation
-                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
-                price -= price_for_this_key;
-                total_price -= price_for_this_key;
-                actual_supply -= 1;
-            };
+            // // Naive loop for price calculation
+            // // Add calculation curve
+            // loop {
+            //     // Bonding price calculation based on a type 
+            //     if final_supply == actual_supply {
+            //         // break total_price;
+            //         break;
+            //     }
+            //     // OLD calculation
+            //     let price_for_this_key = KeysBonding::get_price(key, actual_supply);
+            //     price -= price_for_this_key;
+            //     total_price -= price_for_this_key;
+            //     actual_supply -= 1;
+            // };
 
             let amount_protocol_fee: u256 = total_price * protocol_fee_percent / BPS;
             let amount_creator_fee = total_price * creator_fee_percent / BPS;
