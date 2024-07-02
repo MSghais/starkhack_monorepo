@@ -8,7 +8,6 @@ export const useInstantiateKeys = () => {
     const account = useAccount();
     const chain = useNetwork()
     const chainId = chain?.chain?.id
-    console.log("chainId", chainId)
 
     const handleInstantiateKeys = async (account: AccountInterface, addressContract?:string) => {
         if (!account) return;

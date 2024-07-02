@@ -10,18 +10,18 @@ export const prepareAndConnectContract = async (
     account?: AccountInterface
 ) => {
     // read abi of Test contract
-    console.log("contractAddress",contractAddress)
+    console.log("contractAddress", contractAddress)
     // console.log("provider",await provider.getChainId())
 
     const { abi: testAbi } = await provider.getClassAt(contractAddress);
     if (testAbi === undefined) {
         throw new Error('no abi.');
-      }
+    }
     const contract = new Contract(testAbi, contractAddress, provider);
-    console.log("contract",contract)
+    console.log("contract", contract)
 
     // Connect account with the contract
-    if(account) {
+    if (account) {
         contract.connect(account);
 
     }
@@ -34,53 +34,54 @@ export const useDataKeys = () => {
     const chain = useNetwork()
     const rpcProvider = useProvider()
     const chainId = chain?.chain?.id
-    console.log("chainId", chainId)
 
     // const provider = rpcProvider?.provider ?? new RpcProvider({ nodeUrl:  'http://127.0.0.1:5050'  });
     // const provider = rpcProvider?.provider ?? new RpcProvider();
     const provider = new RpcProvider();
-    
+
     /** Indexer with Key contract event */
-    const getAllKeys = async (account?: AccountInterface, contractAddress?:string) => {
+    const getAllKeys = async (account?: AccountInterface, contractAddress?: string) => {
         console.log("get contract")
         let addressContract = contractAddress ?? CONTRACT_ADDRESS.SEPOLIA.KEY
 
-        const contract = await prepareAndConnectContract(provider, addressContract, account )
+        const contract = await prepareAndConnectContract(provider, addressContract, account)
 
         // if (!account) return;
 
         console.log("get key all keys")
-       
-        let all_keys=await contract.get_all_keys()
+
+        let all_keys = await contract.get_all_keys()
 
 
-        console.log("allkeys",all_keys)
+        console.log("allkeys", all_keys)
 
         return all_keys
     };
 
 
-    const getMySharesOfUser = async (account?: AccountInterface, contractAddress?:string) => {
-        console.log("get contract")
-        console.log("CONTRACT_ADDRESS.DEVNET.KEY",CONTRACT_ADDRESS.DEVNET.KEY)
-        let addressContract = contractAddress ?? CONTRACT_ADDRESS.SEPOLIA.KEY
+    const getMySharesOfUser = async (address_user: string, account?: AccountInterface, contractAddress?: string) => {
+        try {
+            if (!account?.address) return;
+            const contract = await prepareAndConnectContract(provider, CONTRACT_ADDRESS.SEPOLIA.KEY, account)
+            console.log("contract",contract)
 
-        const contract = await prepareAndConnectContract(provider, CONTRACT_ADDRESS.DEVNET.KEY, account )
+            console.log("account connected", account?.address)
+            console.log("share of address_user", address_user)
 
-        // if (!account) return;
-
-        console.log("get key all keys")
-       
-        let all_keys=await contract.get_all_keys()
+            let share_user:any = await contract.get_share_key_of_user(account?.address, address_user)
 
 
-        console.log("allkeys",all_keys)
+            console.log("share_user", share_user)
 
-        return all_keys
+            return share_user
+        } catch (e) {
+            console.log("Error get my shares of user", e)
+        }
+
     };
 
 
 
-    return { getAllKeys , getMySharesOfUser}
+    return { getAllKeys, getMySharesOfUser }
 
 }

@@ -3,43 +3,31 @@ import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 import { useMemo } from "react";
 import { Box, List, ListItem, Text, UnorderedList } from "@chakra-ui/react";
 
-export default function About() {
+export default function AboutDefi() {
   const { address } = useAccount();
 
   return (
     <>
-
       <Box>
-        <Text>Keys marketplace for your Starknet account Key. </Text>
         <Text>
-          Users can buy and sell your keys. You get % of the buy and sell for your keys.
+          Mint jBTC and jUSD.
         </Text>
         <Box fontFamily={"monospace"}>
-          <Text>
-            Instante your keys for your Profile.
-          </Text>
-
           <Text>
             Price can have different type.
           </Text>
           <UnorderedList>
             <ListItem>
-              Linear is firstly implemented.
+              Bitcoin everywhere.
 
             </ListItem>
             <ListItem>
-              Scoring with Nostr SocialFi
-
+              BTC Fi activated
             </ListItem>
+
             <ListItem>
-              Fair launch
-
+             Fast payments
             </ListItem>
-            <ListItem>
-              Limited supply
-
-            </ListItem>
-
 
           </UnorderedList>
         </Box>

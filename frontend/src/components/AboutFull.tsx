@@ -3,13 +3,14 @@ import { useAccount, useConnect, useDisconnect } from "@starknet-react/core";
 import { useMemo } from "react";
 import { Box, List, ListItem, Text, UnorderedList } from "@chakra-ui/react";
 
-export default function About() {
+export default function AboutFull() {
   const { address } = useAccount();
 
   return (
     <>
-
+   
       <Box>
+        <Text>Joyboy for Fun.</Text>
         <Text>Keys marketplace for your Starknet account Key. </Text>
         <Text>
           Users can buy and sell your keys. You get % of the buy and sell for your keys.
@@ -36,7 +37,7 @@ export default function About() {
 
             </ListItem>
             <ListItem>
-              Limited supply
+          Limited supply
 
             </ListItem>
 
@@ -45,6 +46,6 @@ export default function About() {
         </Box>
 
       </Box>
-
+      
     </>)
 }

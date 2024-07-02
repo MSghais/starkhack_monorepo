@@ -1,12 +1,11 @@
 import { FC, useCallback, useEffect, useState } from 'react';
-
-import { Account, AccountInterface, Call, CallData, EstimateFeeResponse, cairo, stark, transaction, uint256 } from 'starknet';
 import { Box, Button, useToast, Text, Divider, Card, Input } from '@chakra-ui/react';
-import { KeysUser } from '@/types';
+import { KeysUser, SharesKeys } from '@/types';
 import { feltToAddress } from '@/helpers/format';
 import { useBuyKeys } from '@/hooks/contracts/useBuyKeys';
 import { useSellKeys } from '@/hooks/contracts/useSellKeys';
 import { useAccount } from '@starknet-react/core';
+import { useDataKeys } from '@/hooks/contracts/useDataKeys';
 
 
 const KeyCard = (key: KeysUser) => {
@@ -14,8 +13,36 @@ const KeyCard = (key: KeysUser) => {
   const { handleBuyKeys } = useBuyKeys()
   const { handleSellKeys } = useSellKeys()
   const [amount, setAmount] = useState<number | undefined>()
+  const [myShare, setMyShare] = useState<SharesKeys | undefined>()
 
-  console.log("KeyCard key", key)
+
+  const { getMySharesOfUser } = useDataKeys()
+
+
+  const getShareOfUser = async () => {
+    if (!key?.owner) return;
+    console.log("try get share of user")
+    let my_share = await getMySharesOfUser(
+      // account?.address, 
+      feltToAddress(BigInt(key?.owner)),
+      account?.account
+
+    )
+
+
+    setMyShare(my_share)
+
+
+    console.log("my share", my_share)
+  }
+
+
+  useEffect(() => {
+
+
+    // getShareOfUser()
+  }, [key])
+  // console.log("KeyCard key", key)
 
 
   const toast = useToast()
@@ -86,6 +113,8 @@ const KeyCard = (key: KeysUser) => {
 
     >
 
+      <Text>Owner: {feltToAddress(BigInt(key.owner))}</Text>
+
       <Text>Total supply: {Number(key.total_supply)}</Text>
       <Text>Initial key price: {Number(key.initial_key_price) / 10 ** 18}</Text>
       <Text>Price: {Number(key.price) / 10 ** 18}</Text>
@@ -122,6 +151,23 @@ const KeyCard = (key: KeysUser) => {
         </Box>
 
       </Box>
+
+
+      <Box>
+        <Button onClick={getShareOfUser}>Refresh balance</Button>
+      </Box>
+
+      {myShare &&
+        <Box>
+          <Text> Total paid: {Number(myShare?.total_paid) / 10 ** 18}</Text>
+          <Text> Owned:  {Number(myShare?.amount_owned)}</Text>
+          <Text> Buy:  {Number(myShare?.amount_buy)}</Text>
+          <Text> SELL:  {Number(myShare?.amount_sell)}</Text>
+
+        </Box>
+      }
+
+
 
 
     </Card>

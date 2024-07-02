@@ -399,7 +399,7 @@ mod tests {
         // Second address
         // Buy and sell 
 
-        let amount_key_buy = 1_u256;
+        let amount_key_buy = 5_u256;
 
         cheat_caller_address_global(buyer);
         start_cheat_caller_address(erc20_address, buyer);
@@ -426,7 +426,7 @@ mod tests {
         let key_user = keys.get_key_of_user(sender_address);
         println!("key_user owner total_supply {:?}", key_user.total_supply);
 
-        let amount_key_sell = 1_u256;
+        let amount_key_sell = 2_u256;
         let amount_to_receive = keys
             .get_price_of_supply_key(
                 sender_address, amount_key_sell, true, // BondingType::Basic, default_token
@@ -436,7 +436,7 @@ mod tests {
         // Contract check before sell
         let mut contract_balance = erc20.balance_of(keys.contract_address);
 
-        let amount_key_sell = 1_u256;
+        // let amount_key_sell = 1_u256;
         let amount_to_receive = keys
             .get_price_of_supply_key(
                 sender_address, amount_key_sell, true, // BondingType::Basic, default_token

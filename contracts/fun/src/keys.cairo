@@ -310,6 +310,7 @@ mod KeysMarketplace {
             } else {
                 share_user.total_paid += total_price;
                 share_user.amount_owned += amount;
+                share_user.amount_buy += amount;
             }
             key.price = total_price;
             key.total_supply += amount;
@@ -364,7 +365,7 @@ mod KeysMarketplace {
             assert!(old_keys.total_supply >= amount, "above supply");
 
             // assert!(old_keys.total_supply == 1 && old_keys.owner == caller, "cant sell owner key");
-            // assert!(old_keys.total_supply == 1 && old_keys.owner == caller, "cant sell owner key");
+            // assert!(old_keys.total_supply - amount == 0 && old_keys.owner == caller, "cant sell owner key");
 
             // TODO erc20 token transfer
             let token = old_keys.token_quote.clone();
@@ -419,10 +420,11 @@ mod KeysMarketplace {
                 share_user.amount_owned -= amount;
                 share_user.amount_sell += amount;
             }
-            // key.price = total_price;
-            key.total_supply -= amount;
-            self.shares_by_users.write((get_caller_address(), address_user), share_user.clone());
-            self.keys_of_users.write(address_user, key.clone());
+            key.price = total_price;
+            // key.total_supply -= amount;
+            key.total_supply=key.total_supply-amount;
+            self.shares_by_users.write((get_caller_address(), address_user.clone()), share_user.clone());
+            self.keys_of_users.write(address_user.clone(), key.clone());
 
             let contract_balance= erc20.balance_of(get_contract_address());
 
