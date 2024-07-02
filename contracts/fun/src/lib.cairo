@@ -4,8 +4,7 @@ pub mod types {
     pub mod keys_types;
 }
 
-pub mod tokens {
-}
+pub mod tokens {}
 
 /// Module containing tests.
 mod tests {
