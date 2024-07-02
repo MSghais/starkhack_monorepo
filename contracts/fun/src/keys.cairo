@@ -392,8 +392,14 @@ mod KeysMarketplace {
             };
             // Todo price by pricetype after fix Enum instantiate
             // Refactorize and opti
-            let total_price = self.get_price_of_supply_key(address_user, amount, true);
+
+            // FIX SELL amount to receive
+            let mut total_price = self.get_price_of_supply_key(address_user, amount, true);
             println!("total price {}", total_price);
+
+
+
+            total_price-=key.initial_key_price.clone();
 
             let amount_protocol_fee: u256 = total_price * protocol_fee_percent / BPS;
             let amount_creator_fee = total_price * creator_fee_percent / BPS;
@@ -420,13 +426,18 @@ mod KeysMarketplace {
             self.shares_by_users.write((get_caller_address(), address_user), share_user.clone());
             self.keys_of_users.write(address_user, key.clone());
 
+            let contract_balance= erc20.balance_of(get_contract_address());
+            println!("contract_balance {}", contract_balance);
+
             // Transfer to Liquidity, Creator and Protocol
-            // println!("transfer protocol fee {}", amount_protocol_fee.clone());
-            erc20.transfer(self.protocol_fee_destination.read(), amount_protocol_fee);
-            // println!("transfer creator fee {}", amount_creator_fee.clone());
+            println!("transfer protocol fee {}", amount_protocol_fee.clone());
+            println!("transfer creator fee {}", amount_creator_fee.clone());
+            println!("transfer liquidity {}", remain_liquidity.clone());
+            // erc20.transfer(self.protocol_fee_destination.read(), amount_protocol_fee);
+       
+
             erc20.transfer(key.owner, amount_creator_fee);
 
-            // println!("transfer liquidity {}", remain_liquidity.clone());
             erc20.transfer(get_caller_address(), remain_liquidity);
 
             self
@@ -446,14 +457,15 @@ mod KeysMarketplace {
             self.default_token.read()
         }
 
-        fn get_price_of_supply_key(
+           fn get_price_of_supply_key(
             self: @ContractState, address_user: ContractAddress, amount: u256, is_decreased: bool
         ) -> u256 {
             assert!(amount <= MAX_STEPS_LOOP, "max step loop");
             let key = self.keys_of_users.read(address_user);
             let mut total_supply = key.total_supply;
             let mut actual_supply = total_supply;
-            let mut final_supply = total_supply;
+            // let mut final_supply = total_supply;
+            let mut final_supply = total_supply + amount;
 
             if is_decreased {
                 final_supply = total_supply - amount;
@@ -474,6 +486,8 @@ mod KeysMarketplace {
                 Option::Some(x) => {
                     match x {
                         BondingType::Linear => {
+                            // println!("Linear curve {:?}", x);
+
                             let start_price = initial_key_price
                                 + (step_increase_linear * actual_supply);
                             let end_price = initial_key_price
@@ -513,6 +527,76 @@ mod KeysMarketplace {
                 }
             }
         }
+
+
+        // fn get_price_of_supply_key(
+        //     self: @ContractState, address_user: ContractAddress, amount: u256, is_decreased: bool
+        // ) -> u256 {
+        //     assert!(amount <= MAX_STEPS_LOOP, "max step loop");
+        //     let key = self.keys_of_users.read(address_user);
+        //     let mut total_supply = key.total_supply;
+        //     let mut actual_supply = total_supply;
+        //     // let mut final_supply = total_supply;
+        //     let mut final_supply = total_supply + amount;
+
+        //     // if is_decreased {
+        //     //     final_supply = total_supply - amount;
+        //     // } else {
+        //     //     final_supply = total_supply + amount;
+        //     // }
+
+        //     let mut actual_supply = total_supply;
+        //     let final_supply = total_supply + amount;
+        //     let mut price = key.price.clone();
+        //     let mut initial_key_price = key.initial_key_price.clone();
+        //     let mut total_price = price;
+        //     let step_increase_linear = key.token_quote.step_increase_linear.clone();
+
+        //     let bonding_type = key.bonding_curve_type.clone();
+
+        //     match bonding_type {
+        //         Option::Some(x) => {
+        //             match x {
+        //                 BondingType::Linear => {
+        //                     let start_price = initial_key_price
+        //                         + (step_increase_linear * actual_supply);
+        //                     let end_price = initial_key_price
+        //                         + (step_increase_linear * final_supply);
+        //                     let total_price = amount * (start_price + end_price) / 2;
+        //                     println!("start_price {}", start_price.clone());
+        //                     println!("end_price {}", end_price.clone());
+        //                     println!("total_price {}", total_price.clone());
+        //                     total_price
+        //                 },
+        //                 // BondingType::Scoring => { 0 },
+        //                 // BondingType::Exponential => { 0 },
+        //                 // BondingType::Limited => { 0 },
+
+        //                 _ => {
+        //                     let start_price = initial_key_price
+        //                         + (step_increase_linear * actual_supply);
+        //                     let end_price = initial_key_price
+        //                         + (step_increase_linear * final_supply);
+        //                     let total_price = amount * (start_price + end_price) / 2;
+
+        //                     // println!("start_price {}", start_price.clone());
+        //                     // println!("end_price {}", end_price.clone());
+        //                     // println!("total_price {}", total_price.clone());
+        //                     total_price
+        //                 },
+        //             }
+        //         },
+        //         Option::None => {
+        //             let start_price = initial_key_price + (step_increase_linear * actual_supply);
+        //             let end_price = initial_key_price + (step_increase_linear * final_supply);
+        //             // println!("start_price {}", start_price.clone());
+        //             // println!("end_price {}", end_price.clone());
+        //             let total_price = amount * (start_price + end_price) / 2;
+        //             // println!("total_price {}", total_price.clone());
+        //             total_price
+        //         }
+        //     }
+        // }
 
         fn get_key_of_user(self: @ContractState, key_user: ContractAddress,) -> Keys {
             self.keys_of_users.read(key_user)

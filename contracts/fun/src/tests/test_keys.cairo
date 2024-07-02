@@ -95,6 +95,107 @@ mod tests {
         IERC20Dispatcher { contract_address }
     }
 
+    #[test]
+    fn buy_and_sell_one_by_recipient() {
+        let (sender_address, erc20, keys) = request_fixture();
+        let amount = 100_u256;
+        cheat_caller_address_global(sender_address);
+        erc20.approve(keys.contract_address, amount);
+
+        let key_address = keys.contract_address;
+        let erc20_address = erc20.contract_address;
+        // Check default token used
+        start_cheat_caller_address(key_address, sender_address);
+        let default_token = keys.get_default_token();
+        assert(default_token.token_address == erc20.contract_address, 'no default token');
+        assert(default_token.initial_key_price == INITIAL_KEY_PRICE, 'no init price');
+
+        // Instantiate keys
+        println!("instantiate keys");
+        keys.instantiate_keys();
+
+        stop_cheat_caller_address(key_address);
+        start_cheat_caller_address(erc20_address, sender_address);
+
+        // Instantite buyer
+        let buyer: ContractAddress = 456.try_into().unwrap();
+        println!("transfer erc20 to buyer");
+
+        erc20.transfer(buyer, amount);
+        // stop_cheat_caller_address(erc20_address);
+
+        // OWner call to buy keys
+
+        let amount_key_buy = 1_u256;
+
+        cheat_caller_address_global(buyer);
+        start_cheat_caller_address(erc20_address, sender_address);
+        println!("owner approve erc20 to key");
+
+        let amount_to_paid = keys
+            .get_price_of_supply_key(
+                sender_address, amount_key_buy, false, // BondingType::Basic, default_token
+            );
+        println!("amount_to_paid {}", amount_to_paid);
+
+        erc20.approve(keys.contract_address, amount_to_paid);
+        stop_cheat_caller_address(erc20_address);
+
+        // Second address
+        // Buy and sell 
+
+        let amount_key_buy = 1_u256;
+
+        cheat_caller_address_global(buyer);
+        start_cheat_caller_address(erc20_address, buyer);
+        println!("buyer approve erc20 to key");
+        erc20.approve(keys.contract_address, amount + amount);
+        stop_cheat_caller_address(erc20_address);
+
+        // BUy one key
+
+        println!("buy one keys");
+        start_cheat_caller_address(keys.contract_address, buyer);
+        let mut allowance = erc20.allowance(buyer, keys.contract_address);
+
+        println!("allowance buyer {}", allowance);
+
+        let amount_to_paid = keys
+            .get_price_of_supply_key(
+                sender_address, amount_key_buy, false, // BondingType::Basic, default_token
+            );
+        erc20.approve(keys.contract_address, amount_to_paid);
+
+        println!("amount_to_paid {}", amount_to_paid);
+
+
+
+        keys.buy_keys(sender_address, amount_key_buy);
+
+        let key_user = keys.get_key_of_user(sender_address);
+        println!("key_user owner total_supply {:?}", key_user.total_supply);
+
+
+
+        // @TODO fix sell key with only 2 total supply
+        // Sub overflow
+        println!("Sell one keys");
+
+        let mut contract_balance = erc20.balance_of(keys.contract_address);
+
+        let amount_key_sell = 1_u256;
+        let amount_to_receive = keys
+            .get_price_of_supply_key(
+                sender_address, amount_key_sell, true, // BondingType::Basic, default_token
+            );
+        println!("amount_to_receive {}", amount_to_receive);
+        assert!(contract_balance >= amount_to_receive - key_user.initial_key_price, "contract balance to low for sell");
+        // assert!(contract_balance >= amount_to_receive, "contract balance to low for sell");
+
+        keys.sell_keys(sender_address, amount_key_sell);
+
+    }
+
 
     #[test]
     fn keys_recipient_buy_and_sell_by_owner() {
@@ -199,7 +300,22 @@ mod tests {
                 sender_address, amount_key_sell, true, // BondingType::Basic, default_token
             );
         println!("amount_to_receive {}", amount_to_receive);
+
+
+        let mut contract_balance = erc20.balance_of(keys.contract_address);
+
+        let amount_key_sell = 1_u256;
+        let amount_to_receive = keys
+            .get_price_of_supply_key(
+                sender_address, amount_key_sell, true, // BondingType::Basic, default_token
+            );
+        println!("amount_to_receive {}", amount_to_receive);
+        assert!(contract_balance >= amount_to_receive - key_user.initial_key_price, "contract balance to low for sell");
+        
+
         keys.sell_keys(sender_address, amount_key_sell);
+
+
     // keys.buy_keys(sender_address, amount_key_buy);
 
     // println!("buy 10 keys");
@@ -316,6 +432,20 @@ mod tests {
                 sender_address, amount_key_sell, true, // BondingType::Basic, default_token
             );
         println!("amount_to_receive {}", amount_to_receive);
+
+        // Contract check before sell
+        let mut contract_balance = erc20.balance_of(keys.contract_address);
+
+        let amount_key_sell = 1_u256;
+        let amount_to_receive = keys
+            .get_price_of_supply_key(
+                sender_address, amount_key_sell, true, // BondingType::Basic, default_token
+            );
+        println!("amount_to_receive {}", amount_to_receive);
+        assert!(contract_balance >= amount_to_receive - key_user.initial_key_price, "contract balance to low for sell");
+        
+
+
         keys.sell_keys(sender_address, amount_key_sell);
     // keys.buy_keys(sender_address, amount_key_buy);
 
