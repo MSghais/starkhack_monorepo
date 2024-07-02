@@ -20,7 +20,7 @@ export const deployKeys = async () => {
     let key_marketplace;
 
     // let token = await createToken()
-    let token = await transferToken(account, "0x0545d0b3af7412C4e93de7B34461D63601e6dFd1fFc63621A6B8C4b677e36b77", TOKENS_ADDRESS.DEVNET.ETH)
+    // let token = await transferToken(account, "0x0545d0b3af7412C4e93de7B34461D63601e6dFd1fFc63621A6B8C4b677e36b77", TOKENS_ADDRESS.DEVNET.ETH)
     if (process.env.IS_DEPLOY_CONTRACT == "true") {
       console.log('try deploy key marketplace')
 

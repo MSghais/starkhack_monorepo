@@ -7,20 +7,17 @@ import { TokenQuoteBuyKeys } from "@/types";
 import { feltToAddress, formatFloatToUint256 } from "@/helpers/format";
 
 export const useBuyKeys = () => {
-
     const account = useAccount();
     const chain = useNetwork()
     // const chainId = chain?.chain?.id
     // console.log("chainId", chainId)
     // const provider = new RpcProvider({ nodeUrl: 'http://127.0.0.1:5050' });
-
     const rpcProvider = useProvider()
     const chainId = chain?.chain?.id
-    console.log("chainId", chainId)
+    // console.log("chainId", chainId)
     // const provider = rpcProvider?.provider ?? new RpcProvider({ nodeUrl:  process.env.STARKNET_RPC_ENDPOINT  });
     // const provider = rpcProvider?.provider ?? new RpcProvider();
     const provider = new RpcProvider();
-
 
     const handleBuyKeys = async (account: AccountInterface, user_address: string, tokenQuote: TokenQuoteBuyKeys, amount: number, contractAddress?: string) => {
         if (!account) return;
@@ -43,12 +40,13 @@ export const useBuyKeys = () => {
         );
 
         console.log("convert float")
-        console.log("amount",amount)
-        let amountUint256=formatFloatToUint256(amount)
-        console.log("amountuint256",amountUint256)
+        console.log("amount", amount)
+        let amountUint256 = formatFloatToUint256(amount);
+        amountUint256 = uint256.bnToUint256(BigInt("0x"+amount))
+        console.log("amountuint256", amountUint256)
         const buyKeysParams = {
             user_address: user_address, // token address
-            amount:amountUint256
+            amount: amountUint256
             // amount: cairo.uint256(amount), // amount int. Float need to be convert with bnToUint
             // amount: uint256.bnToUint256(amount*10**18), // amount int. Float need to be convert with bnToUint
             // amount: uint256.bnToUint256(BigInt(amount*10**18)), // amount int. Float need to be convert with bnToUint
@@ -61,7 +59,7 @@ export const useBuyKeys = () => {
             amountToPaid = await key_contract.get_price_of_supply_key(user_address, amount, false);
 
         } catch (error) {
-            console.log("Error get amount to paid",error)
+            console.log("Error get amount to paid", error)
 
         }
 
@@ -76,26 +74,27 @@ export const useBuyKeys = () => {
             entrypoint: 'approve',
             calldata: CallData.compile({
                 address: addressContract,
-                amount: amountToPaid ?? cairo.uint256(1)
+                amount:  amountToPaid ? cairo.uint256(amountToPaid) : cairo.uint256(1)
             }),
             // calldata: [buyKeysParams.user_address, buyKeysParams.amount]
         }
 
 
-        let call = {
+        let buyKeysCall = {
             contractAddress: addressContract,
             entrypoint: 'buy_keys',
             calldata: CallData.compile({
-                user_address: buyKeysParams.user_address, amount: buyKeysParams.amount,
+                user_address: buyKeysParams.user_address,
+                amount:buyKeysParams.amount,
             }),
             // calldata: [buyKeysParams.user_address, buyKeysParams.amount]
         }
 
 
-        console.log("Call", call)
+        console.log("CabuyKeysCallll", buyKeysCall)
 
-        let tx = await account?.execute([approveCall, 
-            call
+        let tx = await account?.execute([approveCall,
+            buyKeysCall
         ], undefined, {})
         console.log("tx hash", tx.transaction_hash)
         let wait_tx = await account?.waitForTransaction(tx?.transaction_hash)

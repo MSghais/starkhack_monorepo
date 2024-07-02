@@ -62,7 +62,7 @@ const KeyCard = (key: KeysUser) => {
     handleSellKeys(account.account,
       // key.owner
       feltToAddress(BigInt(key.owner))
-      , key.token_quote, amount)
+      , amount, undefined, key.token_quote)
   }
   if (!key) {
     return <></>
