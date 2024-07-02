@@ -1,3 +1,4 @@
+import { constants } from "starknet";
 
 export const CONTRACT_ADDRESS = {
   DEVNET: {
@@ -9,7 +10,8 @@ export const CONTRACT_ADDRESS = {
 
   },
   SEPOLIA: {
-    KEY:"0x5e89dc74f1a40d7814966b028a9b1853d39006a954b27828a9de7e333ec8119"
+    // KEY:"0x3152f4e20fc7c19a7cca40f9b73d85e1a9eef4b7807f1086a730e48dc1c5900"
+    KEY:"0x379b585cbd9cceb17a2bfbd4658532f27647a856fb5ade9b0a04659fc83911d"
   },
   KEY_MARKETPLACE: ""
 }

@@ -10,7 +10,7 @@ import { createToken } from "../utils/token";
 dotenv.config();
 
 let key_address: string = CONTRACT_ADDRESS.DEVNET.KEY // change default address
-let token_used_address = TOKENS_ADDRESS.DEVNET.ETH;
+let token_used_address = TOKENS_ADDRESS.SEPOLIA.BIG_TOKEN;
 // let token_used_address = TOKENS_ADDRESS.DEVNET.BIG_TOKEN;
 let keyContract: Contract;
 let tokenContract: Contract;

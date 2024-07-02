@@ -96,23 +96,21 @@ mod tests {
     }
 
 
-
     #[test]
     fn keys_end_to_end() {
-        let ( sender_address, erc20, keys) = request_fixture();
+        let (sender_address, erc20, keys) = request_fixture();
         let amount = 100_u256;
         cheat_caller_address_global(sender_address);
         erc20.approve(keys.contract_address, amount);
         // stop_cheat_caller_address_global();
 
-
-        let key_address=keys.contract_address;
-        let erc20_address=erc20.contract_address;
+        let key_address = keys.contract_address;
+        let erc20_address = erc20.contract_address;
         // Call a view function of the contract
 
         // Check default token used
         start_cheat_caller_address(key_address, sender_address);
-        let default_token= keys.get_default_token();
+        let default_token = keys.get_default_token();
         assert(default_token.token_address == erc20.contract_address, 'no default token');
         assert(default_token.initial_key_price == INITIAL_KEY_PRICE, 'no init price');
 
@@ -131,14 +129,46 @@ mod tests {
         erc20.transfer(buyer, amount);
         // stop_cheat_caller_address(erc20_address);
 
-        // Buyer call to buy keys
-        
+        // OWner call to buy keys
+
+        let amount_key_buy = 1_u256;
+
+        cheat_caller_address_global(buyer);
+        start_cheat_caller_address(erc20_address, sender_address);
+        println!("owner approve erc20 to key");
+
+        let amount_to_paid = keys
+            .get_price_of_supply_key(
+                sender_address, amount_key_buy, false, // BondingType::Basic, default_token
+            );
+        println!("amount_to_paid {}", amount_to_paid);
+
+        erc20.approve(keys.contract_address, amount_to_paid);
+        stop_cheat_caller_address(erc20_address);
+
+        println!("owner buy one keys");
+        start_cheat_caller_address(keys.contract_address, sender_address);
+        let mut allowance = erc20.allowance(sender_address, keys.contract_address);
+
+        println!("allowance owner {}", allowance);
+
+
+        keys.buy_keys(sender_address, amount_key_buy);
+
+        let key_user = keys.get_key_of_user(sender_address);
+        println!("key_user owner total_supply {:?}", key_user.total_supply);
+
+        assert!(key_user.total_supply== 1+ amount_key_buy, "key user not updated");
+
+        // Second address
+        // Buy and sell 
+
         let amount_key_buy = 1_u256;
 
         cheat_caller_address_global(buyer);
         start_cheat_caller_address(erc20_address, buyer);
         println!("buyer approve erc20 to key");
-        erc20.approve(keys.contract_address, amount+ amount);
+        erc20.approve(keys.contract_address, amount + amount);
         stop_cheat_caller_address(erc20_address);
 
         println!("buy one keys");
@@ -146,64 +176,76 @@ mod tests {
         let mut allowance = erc20.allowance(buyer, keys.contract_address);
 
         println!("allowance buyer {}", allowance);
+
+        let amount_to_paid = keys
+            .get_price_of_supply_key(
+                sender_address, amount_key_buy, false, // BondingType::Basic, default_token
+            );
+        println!("amount_to_paid {}", amount_to_paid);
+
         keys.buy_keys(sender_address, amount_key_buy);
-        // keys.buy_keys(sender_address, amount_key_buy);
+        
+        let key_user = keys.get_key_of_user(sender_address);
+        println!("key_user owner total_supply {:?}", key_user.total_supply);
 
-        // println!("buy 10 keys");
-        // let amount_key_buy = 10_u256;
-        // keys.buy_keys(sender_address, amount_key_buy);
+        let amount_key_sell = 1_u256;
+        let amount_to_receive = keys
+            .get_price_of_supply_key(
+                sender_address, amount_key_sell, true, // BondingType::Basic, default_token
+            );
+        println!("amount_to_receive {}", amount_to_receive);
+        keys.sell_keys(sender_address, amount_key_sell);
+    // keys.buy_keys(sender_address, amount_key_buy);
 
+    // println!("buy 10 keys");
+    // let amount_key_buy = 10_u256;
+    // keys.buy_keys(sender_address, amount_key_buy);
 
-        // println!("buy 100 keys");
-        // let amount_key_buy = 100_u256;
-        // keys.buy_keys(sender_address, amount_key_buy);
+    // println!("buy 100 keys");
+    // let amount_key_buy = 100_u256;
+    // keys.buy_keys(sender_address, amount_key_buy);
 
-
-
-        // println!("buy 1000 keys");
-        // let amount_key_buy = 1000_u256;
-        // keys.buy_keys(sender_address, amount_key_buy);
-
+    // println!("buy 1000 keys");
+    // let amount_key_buy = 1000_u256;
+    // keys.buy_keys(sender_address, amount_key_buy);
 
     }
+// #[test]
+// fn keys_integration_test() {
+//     let (sender_address, erc20, keys) = request_fixture();
+//     let recipient_address: ContractAddress = 345.try_into().unwrap();
+//     let amount = 100_u256;
 
+//     cheat_caller_address_global(sender_address);
+//     erc20.approve(keys.contract_address, amount);
+//     // start_cheat_caller_address(erc20.contract_address, sender_address);
 
-    // #[test]
-    // fn keys_integration_test() {
-    //     let (sender_address, erc20, keys) = request_fixture();
-    //     let recipient_address: ContractAddress = 345.try_into().unwrap();
-    //     let amount = 100_u256;
+//     let default_token = keys.get_default_token();
+//     assert(default_token.token_address == erc20.contract_address, 'no default token');
+//     assert(default_token.initial_key_price == INITIAL_KEY_PRICE, 'no init price');
 
-    //     cheat_caller_address_global(sender_address);
-    //     erc20.approve(keys.contract_address, amount);
-    //     // start_cheat_caller_address(erc20.contract_address, sender_address);
+//     // Instantiate keys
+//     println!("instantiate keys");
+//     keys.instantiate_keys();
+//     println!("get all_keys");
 
-    //     let default_token = keys.get_default_token();
-    //     assert(default_token.token_address == erc20.contract_address, 'no default token');
-    //     assert(default_token.initial_key_price == INITIAL_KEY_PRICE, 'no init price');
+//     let mut all_keys = keys.get_all_keys();
 
-    //     // Instantiate keys
-    //     println!("instantiate keys");
-    //     keys.instantiate_keys();
-    //     println!("get all_keys");
+//     // Buy keys
+//     let amount_key_buy = 1_u256;
 
-    //     let mut all_keys = keys.get_all_keys();
+//     let amount_to_paid = keys.get_price_of_supply_key(sender_address, amount_key_buy, //    1,
+//     // BondingType::Basic, default_token.clone()
+//     );
+//     println!("amount_to_paid {}", amount_to_paid);
+//     erc20.approve(keys.contract_address, amount_to_paid * 100);
 
-    //     // Buy keys
-    //     let amount_key_buy = 1_u256;
+//     let mut allowance = erc20.allowance(sender_address, keys.contract_address);
+//     println!("allowance sender {}", allowance);
+//     // start_cheat_caller_address(keys.contract_address, sender_address);
 
-    //     let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy, //    1,
-    //     // BondingType::Basic, default_token.clone()
-    //     );
-    //     println!("amount_to_paid {}", amount_to_paid);
-    //     erc20.approve(keys.contract_address, amount_to_paid * 100);
-
-    //     let mut allowance = erc20.allowance(sender_address, keys.contract_address);
-    //     println!("allowance sender {}", allowance);
-    //     // start_cheat_caller_address(keys.contract_address, sender_address);
-
-    //     keys.buy_keys(sender_address, amount_key_buy);
-    // }
+//     keys.buy_keys(sender_address, amount_key_buy);
+// }
 // #[test]
 // fn keys_buys_approve() {
 //     let (sender_address, erc20, keys) = request_fixture();
@@ -256,7 +298,7 @@ mod tests {
 
 //     // erc20.approve(keys.contract_address, amount_approve + amount_approve);
 
-//     let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy, //    1,
+//     let amount_to_paid = keys.get_price_of_supply_key(sender_address, amount_key_buy, false, //    1,
 //     // BondingType::Basic, default_token.clone()
 //     );
 //     // println!("amount_to_paid {}", amount_to_paid);
@@ -339,7 +381,7 @@ mod tests {
 
 //     erc20.approve(keys.contract_address, amount_approve + amount_approve);
 
-//     let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy, //    1,
+//     let amount_to_paid = keys.get_price_of_supply_key(sender_address, amount_key_buy, false //    1,
 //     // BondingType::Basic, default_token.clone()
 //     );
 //     println!("amount_to_paid {}", amount_to_paid);
@@ -415,7 +457,7 @@ mod tests {
 
 //     erc20.approve(keys.contract_address, amount_approve + amount_approve);
 
-//     let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy, //    1,
+//     let amount_to_paid = keys.get_price_of_supply_key(sender_address, amount_key_buy, false //    1,
 //     // BondingType::Basic, default_token.clone()
 //     );
 //     println!("amount_to_paid {}", amount_to_paid);
@@ -440,8 +482,8 @@ mod tests {
 
 //     let amount_key_sell = 1_u256;
 //     let amount_to_paid = keys
-//         .get_amount_to_paid(
-//             sender_address, amount_key_buy, // BondingType::Basic, default_token
+//         .get_price_of_supply_key(
+//             sender_address, amount_key_buy, true, // BondingType::Basic, default_token
 //         );
 //     println!("amount_to_paid {}", amount_to_paid);
 //     keys.sell_keys(sender_address, amount_key_sell);
@@ -494,7 +536,7 @@ mod tests {
 //     erc20.approve(keys.contract_address, amount + amount);
 //     erc20.approve(keys.contract_address, amount_approve + amount_approve);
 
-//     let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy, //    1,
+//     let amount_to_paid = keys.get_price_of_supply_key(sender_address, amount_key_buy, //    1,
 //     // BondingType::Basic, default_token.clone()
 //     );
 //     println!("amount_to_paid {}", amount_to_paid);
@@ -514,7 +556,7 @@ mod tests {
 //     keys.buy_keys(sender_address, amount_key_buy);
 // // println!("buy 10 keys");
 // // let amount_key_buy = 10_u256;
-// // let amount_to_paid = keys.get_amount_to_paid(sender_address, amount_key_buy,// BondingType::Basic, default_token
+// // let amount_to_paid = keys.get_price_of_supply_key(sender_address, amount_key_buy,// BondingType::Basic, default_token
 // // );
 // // erc20.approve(key_address, amount_to_paid + amount_to_paid);
 

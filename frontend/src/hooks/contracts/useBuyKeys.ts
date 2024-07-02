@@ -58,7 +58,7 @@ export const useBuyKeys = () => {
 
         let amountToPaid;
         try {
-            amountToPaid = await key_contract.get_amount_to_paid(user_address, amount,);
+            amountToPaid = await key_contract.get_price_of_supply_key(user_address, amount, false);
 
         } catch (error) {
             console.log("Error get amount to paid",error)
@@ -94,7 +94,9 @@ export const useBuyKeys = () => {
 
         console.log("Call", call)
 
-        let tx = await account?.execute([approveCall, call], undefined, {})
+        let tx = await account?.execute([approveCall, 
+            call
+        ], undefined, {})
         console.log("tx hash", tx.transaction_hash)
         let wait_tx = await account?.waitForTransaction(tx?.transaction_hash)
 
