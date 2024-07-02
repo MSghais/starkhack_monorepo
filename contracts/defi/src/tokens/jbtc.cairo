@@ -1,4 +1,4 @@
-use joy_fun::types::defi_types::{MINTER_ROLE, ADMIN_ROLE, OPERATOR, BURNER_ROLE};
+use joy_fun::types::defi_types::{MINTER_ROLE, ADMIN_ROLE, OPERATOR_ROLE, BURNER_ROLE};
 use starknet::ContractAddress;
 
 #[starknet::interface]
@@ -16,7 +16,7 @@ mod JBTC {
     use openzeppelin::token::erc20::interface::IERC20Metadata;
     use openzeppelin::token::erc20::{ERC20Component, ERC20HooksEmptyImpl};
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
-    use super::{MINTER_ROLE, ADMIN_ROLE, OPERATOR, BURNER_ROLE};
+    use super::{MINTER_ROLE, ADMIN_ROLE, OPERATOR_ROLE, BURNER_ROLE};
 
     component!(path: ERC20Component, storage: erc20, event: ERC20Event);
 
@@ -115,7 +115,7 @@ mod JBTC {
             assert!(
                 role == MINTER_ROLE
                     || role == ADMIN_ROLE
-                    || role == OPERATOR
+                    || role == OPERATOR_ROLE
                     || role == BURNER_ROLE,
                 "role not enable"
             );

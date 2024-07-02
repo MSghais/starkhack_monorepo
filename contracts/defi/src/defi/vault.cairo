@@ -1,6 +1,7 @@
-use joy_fun::types::keys_types::{
-    KeysBonding, KeysBondingImpl, MINTER_ROLE, ADMIN_ROLE, StoredName, BuyKeys, SellKeys,
-    CreateKeys, KeysUpdated, TokenQuoteBuyKeys, Keys, SharesKeys, BondingType, get_linear_price,
+use joy_fun::types::defi_types::{
+    MINTER_ROLE, ADMIN_ROLE, OPERATOR_ROLE, TokenQuoteBuyKeys, Deposit, AssetPool, 
+    // get_linear_price,
+    DepositTokenEvent, WithdrawTokenEvent, StakeTokenEvent,
 };
 use starknet::ContractAddress;
 
@@ -13,20 +14,21 @@ pub trait IVaultInterface<TContractState> {
         ref self: TContractState, protocol_fee_destination: ContractAddress
     );
     fn get_default_token(self: @TContractState,) -> TokenQuoteBuyKeys;
-    fn get_amount_to_paid(
-        self: @TContractState, address_user: ContractAddress, amount: u256,
-    ) -> u256;
-    fn get_key_of_user(self: @TContractState, key_user: ContractAddress,) -> Keys;
-    fn get_share_key_of_user(
-        self: @TContractState, owner: ContractAddress, key_user: ContractAddress,
-    ) -> SharesKeys;
-    fn get_all_keys(self: @TContractState) -> Span<Keys>;
+    // fn get_amount_to_paid(
+    //     self: @TContractState, address_user: ContractAddress, amount: u256,
+    // ) -> u256;
+    // fn get_key_of_user(self: @TContractState, key_user: ContractAddress,) -> Keys;
+    // fn get_share_key_of_user(
+    //     self: @TContractState, owner: ContractAddress, key_user: ContractAddress,
+    // ) -> SharesKeys;
+    // fn get_all_assets(self: @TContractState) -> Span<AssetPool>;
 }
 
 #[starknet::contract]
 mod Vault {
     use core::num::traits::Zero;
-    use joy_fun::erc20::{ERC20, IERC20Dispatcher, IERC20DispatcherTrait};
+    use joy_fun::tokens::erc20::{ERC20, IERC20Dispatcher, IERC20DispatcherTrait};
+    // use joy_fun::tokens::ERC20::{ERC20, IERC20Dispatcher, IERC20DispatcherTrait};
 
 
     use openzeppelin::access::accesscontrol::{AccessControlComponent};
@@ -36,9 +38,10 @@ mod Vault {
         contract_address_const, get_block_timestamp, get_contract_address,
     };
     use super::{
-        StoredName, BuyKeys, SellKeys, CreateKeys, KeysUpdated, TokenQuoteBuyKeys, Keys, SharesKeys,
-        KeysBonding, KeysBondingImpl, MINTER_ROLE, ADMIN_ROLE, BondingType,
+        TokenQuoteBuyKeys, Deposit, AssetPool, MINTER_ROLE, ADMIN_ROLE, OPERATOR_ROLE,
+        DepositTokenEvent, StakeTokenEvent, WithdrawTokenEvent
     };
+
 
     // Params
     const MAX_STEPS_LOOP: u256 = 100;
@@ -66,15 +69,12 @@ mod Vault {
 
     #[storage]
     struct Storage {
+        is_tokens_buy_enable: LegacyMap::<ContractAddress, TokenQuoteBuyKeys>,
+        default_token: TokenQuoteBuyKeys,
         oracle_address: ContractAddress,
         is_assets_enabled: LegacyMap::<ContractAddress, bool>,
         assets_by_felt: LegacyMap::<felt252, ContractAddress>,
         names: LegacyMap::<ContractAddress, felt252>,
-        keys_of_users: LegacyMap::<ContractAddress, Keys>,
-        shares_by_users: LegacyMap::<(ContractAddress, ContractAddress), SharesKeys>,
-        array_keys_of_users: LegacyMap::<u64, Keys>,
-        is_tokens_buy_enable: LegacyMap::<ContractAddress, TokenQuoteBuyKeys>,
-        default_token: TokenQuoteBuyKeys,
         total_names: u128,
         initial_key_price: u256,
         protocol_fee_percent: u256,
@@ -95,11 +95,9 @@ mod Vault {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        StoredName: StoredName,
-        BuyKeys: BuyKeys,
-        SellKeys: SellKeys,
-        CreateKeys: CreateKeys,
-        KeysUpdated: KeysUpdated,
+        DepositTokenEvent: DepositTokenEvent,
+        WithdrawTokenEvent: WithdrawTokenEvent,
+        StakeTokenEvent: StakeTokenEvent,
         #[flat]
         AccessControlEvent: AccessControlComponent::Event,
         #[flat]
@@ -177,95 +175,13 @@ mod Vault {
         fn get_default_token(self: @ContractState) -> TokenQuoteBuyKeys {
             self.default_token.read()
         }
-
-        fn get_amount_to_paid(
-            self: @ContractState, address_user: ContractAddress, amount: u256,
-        ) -> u256 {
-            assert!(amount <= MAX_STEPS_LOOP, "max step loop");
-            let key = self.keys_of_users.read(address_user);
-            let mut total_supply = key.total_supply;
-            let mut actual_supply = total_supply;
-            let final_supply = total_supply - amount;
-            let token_quote = key.token_quote.clone();
-
-            let mut actual_supply = total_supply;
-            let final_supply = total_supply + amount;
-            let mut price = key.price.clone();
-            let mut total_price = price;
-            let initial_key_price = token_quote.initial_key_price.clone();
-            let step_increase_linear = token_quote.step_increase_linear.clone();
-
-            // Naive loop for price calculation
-            // Add calculation curve
-            loop {
-                // Bonding price calculation based on a type 
-                if final_supply == actual_supply {
-                    // break total_price;
-                    break;
-                }
-                // OLD calculation
-                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
-                price += price_for_this_key;
-                total_price += price_for_this_key;
-                actual_supply += 1;
-            };
-
-            total_price
-        }
-
-        fn get_key_of_user(self: @ContractState, key_user: ContractAddress,) -> Keys {
-            self.keys_of_users.read(key_user)
-        }
-
-        fn get_share_key_of_user(
-            self: @ContractState, owner: ContractAddress, key_user: ContractAddress,
-        ) -> SharesKeys {
-            self.shares_by_users.read((owner, key_user))
-        }
-
-        fn get_all_keys(self: @ContractState) -> Span<Keys> {
-            let max_key_id = self.total_keys.read() + 1;
-            let mut keys: Array<Keys> = ArrayTrait::new();
-            let mut i = 0; //Since the stream id starts from 0
-            loop {
-                if i >= max_key_id {}
-                let key = self.array_keys_of_users.read(i);
-                if key.owner.is_zero() {
-                    break keys.span();
-                }
-                keys.append(key);
-                i += 1;
-            }
-        }
     }
 
     // // Could be a group of functions about a same topic
     #[generate_trait]
     impl InternalFunctions of InternalFunctionsTrait {
-        fn _loop_get_price_for_each_key(
-            price: u256, key: Keys, supply: u256, amount: u256
-        ) -> u256 {
-            let mut total_supply = key.total_supply.clone();
-            let mut actual_supply = total_supply;
-            let token_quote = key.token_quote.clone();
-            let final_supply = total_supply + amount;
-            let mut price = key.price.clone();
-            let mut total_price = price;
-            let initial_key_price = token_quote.initial_key_price.clone();
-            let step_increase_linear = token_quote.step_increase_linear.clone();
-            loop {
-                // Bonding price calculation based on a type 
-                if final_supply == actual_supply {
-                    break;
-                }
-                // OLD calculation
-                let price_for_this_key = KeysBonding::get_price(key, actual_supply);
-                price += price_for_this_key;
-                total_price += price_for_this_key;
-                actual_supply += 1;
-            };
-
-            total_price
+        fn _get_price(amount: u256) -> u256 {
+            amount
         }
     }
 }
